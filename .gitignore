@@ -1,0 +1,75 @@
+# --- Secrets / local config ---
+.env
+.env.local
+*.pem
+*.key
+
+# --- Bulk data (re-fetchable from source) ---
+data/raw/**
+data/interim/**
+data/processed/**
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+
+# Geospatial source formats — exclude by default, add small reference layers explicitly
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.sbn
+*.sbx
+*.qix
+*.gpkg
+*.gdb/
+*.fgb
+*.tif
+*.tiff
+*.img
+*.vrt
+*.hgt
+*.zip
+*.7z
+*.tar.gz
+*.gz
+
+# --- Local databases / dumps ---
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.dump
+*.backup
+pgdata/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+notebooks/scratch/
+
+# --- OS ---
+Thumbs.db
+.DS_Store
+
+# --- Editor ---
+.vscode/
+.idea/
+*.swp
+
+# --- Claude Code local config ---
+.claude/

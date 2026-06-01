@@ -1,0 +1,28 @@
+# Core geo stack
+geopandas>=1.0
+shapely>=2.0
+fiona>=1.10
+pyproj>=3.6
+rasterio>=1.4
+rioxarray>=0.17
+
+# Database
+SQLAlchemy>=2.0
+psycopg[binary]>=3.2
+GeoAlchemy2>=0.15
+
+# HTTP + parsing
+requests>=2.32
+httpx>=0.27
+
+# Tabular / serialization
+pandas>=2.2
+pyarrow>=17.0
+
+# Indexing (optional — ties into H3 work)
+h3>=4.1
+
+# Utilities
+python-dotenv>=1.0
+tqdm>=4.66
+click>=8.1
