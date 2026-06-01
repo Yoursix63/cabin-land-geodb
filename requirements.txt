@@ -1,7 +1,9 @@
 # Core geo stack
+# (fiona omitted — needs GDAL headers to build on Python 3.14;
+#  geopandas reads via pyogrio instead, which ships wheels.)
 geopandas>=1.0
 shapely>=2.0
-fiona>=1.10
+pyogrio>=0.10
 pyproj>=3.6
 rasterio>=1.4
 rioxarray>=0.17

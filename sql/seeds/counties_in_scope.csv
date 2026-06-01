@@ -1,0 +1,60 @@
+county_fips,state_fips,state_abbr,name,drive_minutes,tiger_year
+51003,51,VA,Albemarle County,161.2,2024
+51510,51,VA,Alexandria city,10.5,2024
+51007,51,VA,Amelia County,175.1,2024
+51013,51,VA,Arlington County,20.1,2024
+51033,51,VA,Caroline County,99.1,2024
+51036,51,VA,Charles City County,160.6,2024
+51540,51,VA,Charlottesville city,161.5,2024
+51041,51,VA,Chesterfield County,157.2,2024
+51043,51,VA,Clarke County,107.7,2024
+51570,51,VA,Colonial Heights city,151.3,2024
+51047,51,VA,Culpeper County,97.5,2024
+51057,51,VA,Essex County,132.7,2024
+51059,51,VA,Fairfax County,25.8,2024
+51600,51,VA,Fairfax city,31.1,2024
+51610,51,VA,Falls Church city,25.3,2024
+51061,51,VA,Fauquier County,73.5,2024
+51065,51,VA,Fluvanna County,173.4,2024
+51069,51,VA,Frederick County,124.4,2024
+51630,51,VA,Fredericksburg city,63.9,2024
+51075,51,VA,Goochland County,152.8,2024
+51079,51,VA,Greene County,147.1,2024
+51085,51,VA,Hanover County,106.1,2024
+51660,51,VA,Harrisonburg city,159.4,2024
+51087,51,VA,Henrico County,137.7,2024
+51670,51,VA,Hopewell city,148.2,2024
+51095,51,VA,James City County,172.5,2024
+51099,51,VA,King George County,88.9,2024
+51101,51,VA,King William County,133.0,2024
+51097,51,VA,King and Queen County,156.6,2024
+51107,51,VA,Loudoun County,74.3,2024
+51109,51,VA,Louisa County,128.8,2024
+51113,51,VA,Madison County,128.9,2024
+51685,51,VA,Manassas Park city,50.2,2024
+51683,51,VA,Manassas city,53.8,2024
+51119,51,VA,Middlesex County,177.0,2024
+51127,51,VA,New Kent County,152.7,2024
+51133,51,VA,Northumberland County,178.0,2024
+51137,51,VA,Orange County,106.0,2024
+51139,51,VA,Page County,137.1,2024
+51730,51,VA,Petersburg city,156.2,2024
+51145,51,VA,Powhatan County,159.8,2024
+51149,51,VA,Prince George County,167.3,2024
+51153,51,VA,Prince William County,55.4,2024
+51157,51,VA,Rappahannock County,106.4,2024
+51159,51,VA,Richmond County,136.1,2024
+51760,51,VA,Richmond city,127.2,2024
+51165,51,VA,Rockingham County,166.5,2024
+51171,51,VA,Shenandoah County,126.3,2024
+51177,51,VA,Spotsylvania County,91.0,2024
+51179,51,VA,Stafford County,57.1,2024
+51187,51,VA,Warren County,96.1,2024
+51193,51,VA,Westmoreland County,118.6,2024
+51830,51,VA,Williamsburg city,174.0,2024
+51840,51,VA,Winchester city,113.5,2024
+54003,54,WV,Berkeley County,126.3,2024
+54027,54,WV,Hampshire County,162.6,2024
+54031,54,WV,Hardy County,161.2,2024
+54037,54,WV,Jefferson County,101.7,2024
+54065,54,WV,Morgan County,153.6,2024

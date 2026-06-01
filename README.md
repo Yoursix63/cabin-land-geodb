@@ -23,8 +23,8 @@ be ranked. Free FSBO / public listings are overlaid on top where available.
 
 ## Stack
 
-- PostgreSQL 16 + PostGIS 3
-- Python (geopandas, shapely, rasterio, SQLAlchemy, psycopg)
+- PostgreSQL 17 + PostGIS 3
+- Python 3.14 (geopandas, shapely, rasterio, SQLAlchemy, psycopg)
 - Source data from VGIN, WV GIS Tech Center, USGS 3DEP, FEMA NFHL, USDA
   SSURGO, USGS NHD, US Census TIGER, MRLC NLCD
 
@@ -33,12 +33,60 @@ be ranked. Free FSBO / public listings are overlaid on top where available.
 ```
 data/         downloaded + intermediate + processed data (gitignored)
 sql/          schema migrations and analysis queries
+sql/seeds/    small reference data committed alongside the schema
 ingest/       one loader module per data source
 scoring/      parcel scoring logic
 notebooks/    exploratory analysis
 docs/         design notes
 ```
 
+## Setup
+
+### 1. PostgreSQL + PostGIS
+
+Install PostgreSQL 17 via winget:
+
+```powershell
+winget install PostgreSQL.PostgreSQL.17
+```
+
+The EDB installer will prompt for a superuser password — pick one and remember it.
+After install completes, **Stack Builder** launches automatically. Use it to install
+the **PostGIS 3 bundle** for PostgreSQL 17.
+
+### 2. Create the project database
+
+```powershell
+$env:PGPASSWORD = "<your-password>"
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -c "CREATE DATABASE cabin_land;"
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -d cabin_land -f sql\001_extensions.sql
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -d cabin_land -f sql\002_core_tables.sql
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -d cabin_land -f sql\003_indexes.sql
+```
+
+### 3. Python deps + config
+
+```powershell
+copy .env.example .env
+# edit .env and set PGPASSWORD
+python -m pip install --user -r requirements.txt
+python -m pip install --user "psycopg[binary]" SQLAlchemy GeoAlchemy2
+```
+
+### 4. Load the in-scope county list
+
+```powershell
+python -m ingest.counties        # rebuild the county set from Census + OSRM (optional — output committed)
+python -m ingest.load_counties   # load counties_in_scope into PostGIS
+```
+
 ## Status
 
-Project init. No code yet.
+- [x] Phase 0: project skeleton, SQL schema
+- [ ] Phase 0: PostgreSQL + PostGIS install (manual — see Setup above)
+- [x] Phase 1: county scope computed (59 counties — see `sql/seeds/counties_in_scope.csv`)
+- [ ] Phase 1: counties loaded into PostGIS (blocked on install)
+- [ ] Phase 2: parcel ingestion (WV statewide + per-county VA)
+- [ ] Phase 3: suitability layers (DEM, flood, soils, hydro, roads, landcover)
+- [ ] Phase 4: parcel scoring
+- [ ] Phase 5: FSBO / public listings overlay
