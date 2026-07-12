@@ -40,15 +40,22 @@ OUT_FIELDS = [
 ]
 
 UPSERT_PARCEL = text("""
+    WITH g AS (
+        SELECT ST_CollectionExtract(
+            ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(:geom_json), 4326)),
+            3
+        ) AS geom
+    )
     INSERT INTO parcels (
         county_fips, parcel_local_id, acres,
         owner_name, situs_address, source_attrs, geom
     )
-    VALUES (
+    SELECT
         :county_fips, :parcel_local_id, :acres,
         :owner_name, :situs_address, CAST(:source_attrs AS jsonb),
-        ST_Multi(ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(:geom_json), 4326)))
-    )
+        g.geom
+    FROM g
+    WHERE NOT ST_IsEmpty(g.geom)
     ON CONFLICT (county_fips, parcel_local_id) DO UPDATE SET
         acres         = EXCLUDED.acres,
         owner_name    = EXCLUDED.owner_name,
