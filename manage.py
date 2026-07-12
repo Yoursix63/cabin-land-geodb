@@ -179,6 +179,34 @@ def refresh_candidates() -> None:
 
 
 # ---------------------------------------------------------------------------
+# metrics
+# ---------------------------------------------------------------------------
+@cli.group()
+def metrics() -> None:
+    """Recompute per-parcel suitability metrics.
+
+    Run after any parcel reload + refresh-candidates: the metrics table
+    is keyed on parcel id and new candidates start with no rows.
+    """
+
+
+@metrics.command("flood")
+def metrics_flood() -> None:
+    """Recompute sfha_pct for all candidate parcels (~10 min)."""
+    import time
+
+    import psycopg
+
+    from ingest.db import get_conninfo
+    from ingest.flood_nfhl import METRICS_SQL
+    t0 = time.time()
+    with psycopg.connect(get_conninfo()) as pg:
+        pg.execute(METRICS_SQL)
+        pg.commit()
+    click.echo(f"flood metrics recomputed in {time.time() - t0:.0f}s")
+
+
+# ---------------------------------------------------------------------------
 # load
 # ---------------------------------------------------------------------------
 @cli.group()

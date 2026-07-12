@@ -223,6 +223,9 @@ def main() -> None:
                     "notes": f"load failed {type(exc).__name__}: {exc}"[:500],
                 })
     print(f"\nDone. Loaded {grand_total:,} VA parcels total.")
+    if grand_total:
+        print("Reminder: run `python manage.py refresh-candidates` and "
+              "`python manage.py metrics flood` to cascade the reload.")
     if failures:
         print(f"FAILED counties ({len(failures)}): {', '.join(failures)}")
         sys.exit(1)

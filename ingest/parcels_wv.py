@@ -204,6 +204,9 @@ def main() -> None:
         print()
 
     print(f"Done. Loaded {grand_total:,} WV parcels total.")
+    if grand_total:
+        print("Reminder: run `python manage.py refresh-candidates` and "
+              "`python manage.py metrics flood` to cascade the reload.")
 
 
 if __name__ == "__main__":

@@ -84,6 +84,22 @@ SFHA zone, only 3% are majority-floodplain.
 even via `exec_driver_sql`); `manage.py migrate` runs raw psycopg
 instead.
 
+## 2026-07 — Post-reload staleness
+
+**A parcel reload does not cascade.** `candidate_parcels` is a
+materialized snapshot and `parcel_metrics` is keyed on parcel id, so
+after any parcel load the sequence is:
+
+    python manage.py refresh-candidates
+    python manage.py metrics flood      # and future layers
+
+Learned the hard way: VGIN's July quarterly refresh added ~114K VA
+parcels (2.09M → 2.20M; candidates 346K → 385K), and the matview +
+flood metrics silently reflected June until manually refreshed.
+Loaders now print a reminder; wiring auto-refresh into the loaders was
+considered and rejected (a multi-county load session would refresh
+repeatedly — the 10-min metrics pass belongs at the end, invoked once).
+
 ## 2026-06 — Scope pruning
 
 **`cabin_relevant` flag on `counties_in_scope`; `candidate_parcels`
