@@ -84,7 +84,7 @@ def main() -> None:
 
     in_scope_features: list[dict] = []
     rows: list[dict] = []
-    for feat in tqdm(features, unit="county"):
+    for feat in tqdm(features, unit="county", disable=None):
         props = feat["properties"]
         lat = float(props["INTPTLAT"])
         lon = float(props["INTPTLON"])

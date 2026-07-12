@@ -179,7 +179,8 @@ def main() -> None:
             conn.execute(UPSERT_SOURCE,
                          {"fips": fips, "url": URL, "n": len(rows)})
             chunks = range(0, len(rows), CHUNK_SIZE)
-            for i in tqdm(list(chunks), unit="chunk", desc="  upsert"):
+            # disable=None -> progress bar only on a real terminal
+            for i in tqdm(list(chunks), unit="chunk", desc="  upsert", disable=None):
                 conn.execute(UPSERT_PARCEL, rows[i:i + CHUNK_SIZE])
         grand_total += len(rows)
         print()

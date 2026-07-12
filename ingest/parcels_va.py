@@ -169,7 +169,8 @@ def load_county(fips: str, name: str) -> int:
     with engine.begin() as conn:
         conn.execute(UPSERT_SOURCE, {"fips": fips, "url": URL, "n": len(rows)})
         chunks = list(range(0, len(rows), CHUNK_SIZE))
-        for i in tqdm(chunks, unit="chunk", desc="  upsert"):
+        # disable=None -> progress bar only on a real terminal
+        for i in tqdm(chunks, unit="chunk", desc="  upsert", disable=None):
             conn.execute(UPSERT_PARCEL, rows[i:i + CHUNK_SIZE])
     return len(rows)
 

@@ -54,39 +54,47 @@ The EDB installer will prompt for a superuser password — pick one and remember
 After install completes, **Stack Builder** launches automatically. Use it to install
 the **PostGIS 3 bundle** for PostgreSQL 17.
 
-### 2. Create the project database
-
-```powershell
-$env:PGPASSWORD = "<your-password>"
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -c "CREATE DATABASE cabin_land;"
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -d cabin_land -f sql\001_extensions.sql
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -d cabin_land -f sql\002_core_tables.sql
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -d cabin_land -f sql\003_indexes.sql
-```
-
-### 3. Python deps + config
+### 2. Python deps + config
 
 ```powershell
 copy .env.example .env
 # edit .env and set PGPASSWORD
 python -m pip install --user -r requirements.txt
-python -m pip install --user "psycopg[binary]" SQLAlchemy GeoAlchemy2
+python -m pip install --user "psycopg[binary]" SQLAlchemy GeoAlchemy2 click
 ```
 
-### 4. Load the in-scope county list
+Optionally create `%APPDATA%\postgresql\pgpass.conf` with
+`localhost:5432:*:postgres:<password>` so `psql` never prompts.
+
+### 3. Create the database and load
 
 ```powershell
-python -m ingest.counties        # rebuild the county set from Census + OSRM (optional — output committed)
-python -m ingest.load_counties   # load counties_in_scope into PostGIS
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -c "CREATE DATABASE cabin_land;"
+python manage.py migrate          # apply sql/NNN_*.sql in order
+python manage.py load counties    # county scope (Census + OSRM drive time)
+python manage.py load wv          # WV parcels (statewide MapServer)
+python manage.py load va          # VA parcels (VGIN, geometry-only)
+python manage.py verify           # sanity checks
+python manage.py status           # row counts + freshness
 ```
+
+## CLI
+
+`manage.py` wraps everything: `migrate` (with `--fake`), `status`,
+`verify`, `refresh-candidates`, and `load counties|wv|va [FIPS...]`.
 
 ## Status
 
-- [x] Phase 0: project skeleton, SQL schema
-- [ ] Phase 0: PostgreSQL + PostGIS install (manual — see Setup above)
-- [x] Phase 1: county scope computed (59 counties — see `sql/seeds/counties_in_scope.csv`)
-- [ ] Phase 1: counties loaded into PostGIS (blocked on install)
-- [ ] Phase 2: parcel ingestion (WV statewide + per-county VA)
-- [ ] Phase 3: suitability layers (DEM, flood, soils, hydro, roads, landcover)
+- [x] Phase 0: PostgreSQL 17 + PostGIS 3.6.2, schema, migrations runner
+- [x] Phase 1: county scope — 59 jurisdictions (54 VA + 5 WV)
+- [x] Phase 2: parcels — 2.09M loaded (WV statewide + VGIN; Rappahannock
+      absent from VGIN, needs county-direct source)
+- [x] Scope pruning: `candidate_parcels` matview (~346K parcels,
+      2–1000 ac in cabin-relevant jurisdictions)
+- [ ] Phase 2.5: owner/address augmentation for shortlisted VA counties
+- [ ] Phase 3: suitability layers (DEM/slope, flood, soils, hydro, landcover)
 - [ ] Phase 4: parcel scoring
 - [ ] Phase 5: FSBO / public listings overlay
+
+See [docs/DECISIONS.md](docs/DECISIONS.md) for design decisions and
+data-source findings.
