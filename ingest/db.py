@@ -20,3 +20,14 @@ def get_url() -> str:
 
 def get_engine() -> Engine:
     return create_engine(get_url(), future=True)
+
+
+def get_conninfo() -> str:
+    """Raw psycopg conninfo (for COPY paths that bypass SQLAlchemy)."""
+    return (
+        f"host={os.getenv('PGHOST', 'localhost')} "
+        f"port={os.getenv('PGPORT', '5432')} "
+        f"dbname={os.getenv('PGDATABASE', 'cabin_land')} "
+        f"user={os.getenv('PGUSER', 'postgres')} "
+        f"password={os.getenv('PGPASSWORD', '')}"
+    )

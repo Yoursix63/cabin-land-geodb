@@ -18,11 +18,13 @@ import json
 import time
 from typing import Iterable
 
-import requests
 from sqlalchemy import text
 from tqdm import tqdm
 
 from .db import get_engine
+from .http import make_session
+
+SESSION = make_session()
 
 URL = (
     "https://services.wvgis.wvu.edu/arcgis/rest/services/"
@@ -103,7 +105,7 @@ def fetch_county(wv_code: str) -> list[dict]:
             "resultOffset": offset,
             "resultRecordCount": PAGE_SIZE,
         }
-        r = requests.get(URL, params=params, timeout=180)
+        r = SESSION.get(URL, params=params, timeout=180)
         r.raise_for_status()
         data = r.json()
         page = data.get("features", [])
@@ -154,13 +156,29 @@ def dedupe_by_local_id(rows: Iterable[dict]) -> list[dict]:
     return list(seen.values())
 
 
+FRESH_DAYS = 30
+
+
 def main() -> None:
+    import sys
+    force = "--force" in sys.argv
     engine = get_engine()
     with engine.connect() as conn:
         in_scope = conn.execute(text(
             "SELECT county_fips, name FROM counties_in_scope "
             "WHERE state_abbr='WV' ORDER BY name"
         )).all()
+        if not force:
+            fresh = {r[0] for r in conn.execute(text(
+                "SELECT county_fips FROM parcel_source "
+                "WHERE parcel_count IS NOT NULL "
+                "AND last_loaded_at > now() - make_interval(days => :d)"
+            ), {"d": FRESH_DAYS}).all()}
+            skipped = [n for f, n in in_scope if f in fresh]
+            in_scope = [(f, n) for f, n in in_scope if f not in fresh]
+            if skipped:
+                print(f"Skipping {len(skipped)} fresh counties "
+                      f"(--force to reload)")
 
     print(f"Loading {len(in_scope)} WV counties from WV_Parcels MapServer\n")
 

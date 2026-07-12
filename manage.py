@@ -60,8 +60,14 @@ def migrate(fake: bool) -> None:
             click.echo(f"fake-applying {path.name}")
         else:
             click.echo(f"applying {path.name} ...")
-            with engine.begin() as conn:
-                conn.exec_driver_sql(path.read_text(encoding="utf-8"))
+            # Raw psycopg: no placeholder parsing, so '%' in SQL comments
+            # and operators is safe, unlike SQLAlchemy exec_driver_sql.
+            import psycopg
+
+            from ingest.db import get_conninfo
+            with psycopg.connect(get_conninfo()) as pg:
+                pg.execute(path.read_text(encoding="utf-8"))
+                pg.commit()
         with engine.begin() as conn:
             conn.execute(
                 text("INSERT INTO schema_migrations (filename) VALUES (:f) "

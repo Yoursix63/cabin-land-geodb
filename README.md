@@ -92,7 +92,10 @@ python manage.py status           # row counts + freshness
 - [x] Scope pruning: `candidate_parcels` matview (~346K parcels,
       2–1000 ac in cabin-relevant jurisdictions)
 - [ ] Phase 2.5: owner/address augmentation for shortlisted VA counties
-- [ ] Phase 3: suitability layers (DEM/slope, flood, soils, hydro, landcover)
+- [x] Phase 3a: FEMA flood zones (NFHL via Living Atlas) + per-parcel
+      `sfha_pct` metrics — 82% of candidates fully outside SFHA
+- [ ] Phase 3b: slope/aspect from 3DEP DEM on H3 hex fabric
+- [ ] Phase 3c: soils (SSURGO), hydro (NHD), landcover (NLCD)
 - [ ] Phase 4: parcel scoring
 - [ ] Phase 5: FSBO / public listings overlay
 

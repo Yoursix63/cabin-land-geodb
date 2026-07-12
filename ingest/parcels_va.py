@@ -23,11 +23,13 @@ import sys
 import time
 from typing import Iterable
 
-import requests
 from sqlalchemy import text
 from tqdm import tqdm
 
 from .db import get_engine
+from .http import make_session
+
+SESSION = make_session()
 
 URL = (
     "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/"
@@ -97,7 +99,7 @@ def fetch_county(fips: str) -> Iterable[dict]:
             "resultOffset": offset,
             "resultRecordCount": PAGE_SIZE,
         }
-        r = requests.get(URL, params=params, timeout=180)
+        r = SESSION.get(URL, params=params, timeout=180)
         r.raise_for_status()
         data = r.json()
         page = data.get("features", [])
@@ -175,14 +177,55 @@ def load_county(fips: str, name: str) -> int:
     return len(rows)
 
 
+FRESH_DAYS = 30
+
+RECORD_FAILURE = text("""
+    INSERT INTO parcel_source (county_fips, source_kind, source_url, notes)
+    VALUES (:fips, 'vgin_statewide', :url, :notes)
+    ON CONFLICT (county_fips) DO UPDATE SET notes = EXCLUDED.notes
+""")
+
+
+def fresh_counties() -> set[str]:
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(
+            "SELECT county_fips FROM parcel_source "
+            "WHERE parcel_count IS NOT NULL "
+            "AND last_loaded_at > now() - make_interval(days => :d)"
+        ), {"d": FRESH_DAYS}).all()
+    return {r[0] for r in rows}
+
+
 def main() -> None:
+    force = "--force" in sys.argv
     explicit = [a for a in sys.argv[1:] if a.startswith("51")]
     targets = get_target_counties(explicit)
-    print(f"Loading {len(targets)} VA counties from VGIN VA_Parcels\n")
+    skip = set() if force else fresh_counties()
+    todo = [(f, n) for f, n in targets if f not in skip]
+    skipped = len(targets) - len(todo)
+    if skipped:
+        print(f"Skipping {skipped} counties loaded within {FRESH_DAYS} days "
+              f"(--force to reload)")
+    print(f"Loading {len(todo)} VA counties from VGIN VA_Parcels\n")
     grand_total = 0
-    for fips, name in targets:
-        grand_total += load_county(fips, name)
+    failures: list[str] = []
+    engine = get_engine()
+    for fips, name in todo:
+        try:
+            grand_total += load_county(fips, name)
+        except Exception as exc:  # keep the run alive; record the failure
+            failures.append(f"{name} ({fips})")
+            print(f"  FAILED: {exc}")
+            with engine.begin() as conn:
+                conn.execute(RECORD_FAILURE, {
+                    "fips": fips, "url": URL,
+                    "notes": f"load failed {type(exc).__name__}: {exc}"[:500],
+                })
     print(f"\nDone. Loaded {grand_total:,} VA parcels total.")
+    if failures:
+        print(f"FAILED counties ({len(failures)}): {', '.join(failures)}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

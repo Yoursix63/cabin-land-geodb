@@ -56,6 +56,34 @@ full VA run (Culpeper County) — see loaders for the pattern.
 **Row counts after Phase 2** (2026-06-07): 2,090,681 parcels total —
 145,476 WV (5 counties), 1,945,205 VA (53 jurisdictions).
 
+## 2026-06 — Suitability architecture (Phase 3)
+
+**Hybrid fabric: exact vector joins for vector layers, H3 hexes for
+raster-derived layers.** Flood zones / streams are polygon data —
+parcel intersection is exact and cheap against the 346K candidate set.
+Slope/aspect/landcover come from rasters; those get aggregated onto H3
+cells once (res 10 for slope), then parcel scoring is a hex join —
+re-scoring never touches the rasters again. `h3` + `h3_postgis` 4.1.4
+enabled in migration 005.
+
+**Ingest infra (`ingest/http.py`, `ingest/staging.py`):** shared retry
+session (5 tries, exponential backoff) and COPY-into-UNLOGGED-staging
+bulk loads. Parcel loaders skip counties loaded within 30 days unless
+`--force`, and a per-county failure no longer kills a run.
+
+**FEMA NFHL via ESRI Living Atlas, not hazards.fema.gov** — FEMA's own
+ArcGIS server refused TLS connections outright (curl exit 35). The
+Living Atlas `USA_Flood_Hazard_Reduced_Set_gdb` mirror carries the full
+NFHL schema (FLD_ZONE, SFHA_TF, STATIC_BFE). Fetched SFHA_TF='T' plus
+'AREA NOT INCLUDED' per county bbox, deduped on FLD_AR_ID: 14,040
+polygons AOI-wide. Per-parcel `sfha_pct` computed for all 345,793
+candidates in ~8 min (single set-based query); 62,340 (18%) touch an
+SFHA zone, only 3% are majority-floodplain.
+
+**SQLAlchemy chokes on `%` in migration files** (placeholder parsing
+even via `exec_driver_sql`); `manage.py migrate` runs raw psycopg
+instead.
+
 ## 2026-06 — Scope pruning
 
 **`cabin_relevant` flag on `counties_in_scope`; `candidate_parcels`
