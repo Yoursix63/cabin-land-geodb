@@ -84,6 +84,32 @@ SFHA zone, only 3% are majority-floodplain.
 even via `exec_driver_sql`); `manage.py migrate` runs raw psycopg
 instead.
 
+## 2026-07 — Slope fabric (Phase 3b)
+
+**3DEP ImageServer computes slope server-side — but only correctly in a
+projected output CRS.** `renderingRule={"rasterFunction":"Slope
+Degrees"}` with `imageSR=4326` returns ~90° everywhere (rise in meters
+over run in degrees). Requesting `imageSR=5070` (CONUS Albers, meters)
+gives correct values, verified against Great North Mountain terrain
+(mean 15.7°, max 52.8°). Pipeline fetches 2048px tiles at 10 m in 5070,
+transforms pixel centers to WGS84 locally, and bins to H3 res 10
+(~146 px/cell) with h3ronpy's vectorized `coordinates_to_cells`.
+
+**Never polyfill parcels in SQL.** The first per-parcel metrics query
+used `h3_polygon_to_cells` in a LATERAL over 385K candidates — one
+Postgres backend, ~50 ms/parcel, killed after 6 hours. Replacement:
+`ingest/parcel_cells.py` computes parcel→cell mappings with h3ronpy
+(`wkb_to_cells`, ContainmentMode.Covers so sub-cell parcels still map)
+— 4.48M mappings in 380 s — and stores them in `parcel_cells`. The
+metrics query is then a plain join: 2 s. Rebuild parcel_cells after
+every `refresh-candidates`.
+
+**h3ronpy 0.22 API notes:** vectorized functions live in
+`h3ronpy.vector` (not `.pandas.vector`); results are arro3 arrays whose
+list scalars need `.as_py()`. `raster_to_dataframe` aggregates to one
+value per cell — useless for within-cell percentiles, hence the manual
+pixel binning.
+
 ## 2026-07 — Post-reload staleness
 
 **A parcel reload does not cascade.** `candidate_parcels` is a

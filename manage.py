@@ -190,20 +190,31 @@ def metrics() -> None:
     """
 
 
-@metrics.command("flood")
-def metrics_flood() -> None:
-    """Recompute sfha_pct for all candidate parcels (~10 min)."""
+def _run_metrics_sql(sql, label: str, params: dict | None = None) -> None:
     import time
 
     import psycopg
 
     from ingest.db import get_conninfo
-    from ingest.flood_nfhl import METRICS_SQL
     t0 = time.time()
     with psycopg.connect(get_conninfo()) as pg:
-        pg.execute(METRICS_SQL)
+        pg.execute(sql, params)
         pg.commit()
-    click.echo(f"flood metrics recomputed in {time.time() - t0:.0f}s")
+    click.echo(f"{label} metrics recomputed in {time.time() - t0:.0f}s")
+
+
+@metrics.command("flood")
+def metrics_flood() -> None:
+    """Recompute sfha_pct for all candidate parcels (~10 min)."""
+    from ingest.flood_nfhl import METRICS_SQL
+    _run_metrics_sql(METRICS_SQL, "flood")
+
+
+@metrics.command("slope")
+def metrics_slope() -> None:
+    """Recompute slope stats for candidates (needs parcel_cells built)."""
+    from ingest.slope_3dep import METRICS_SQL
+    _run_metrics_sql(METRICS_SQL, "slope")
 
 
 # ---------------------------------------------------------------------------
