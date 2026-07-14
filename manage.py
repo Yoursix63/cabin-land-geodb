@@ -217,6 +217,13 @@ def metrics_slope() -> None:
     _run_metrics_sql(METRICS_SQL, "slope")
 
 
+@metrics.command("septic")
+def metrics_septic() -> None:
+    """Recompute septic suitability for candidates from soil_units."""
+    from ingest.soils_ssurgo import METRICS_SQL
+    _run_metrics_sql(METRICS_SQL, "septic")
+
+
 # ---------------------------------------------------------------------------
 # load
 # ---------------------------------------------------------------------------

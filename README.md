@@ -96,7 +96,9 @@ python manage.py status           # row counts + freshness
       `sfha_pct` metrics — 82% of candidates fully outside SFHA
 - [x] Phase 3b: slope fabric — 3.5M H3 res-10 cells from 3DEP 10 m
       slope tiles; 98.7% of candidates have slope_mean/p90/pct_steep
-- [ ] Phase 3c: soils (SSURGO), hydro (NHD), landcover (NLCD), road access
+- [x] Phase 3c-soils: SSURGO septic suitability — 491K soil polygons,
+      99.9% of candidates rated; 5-50ac flat+dry+septic funnel → 43.5K
+- [ ] Phase 3c: hydro (NHD), landcover (NLCD), road access
 - [ ] Phase 4: weighted scoring (flat+dry 5-50 ac screen alone leaves
       ~117K parcels — needs more discriminators)
 - [ ] Phase 4: parcel scoring

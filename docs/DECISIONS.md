@@ -110,6 +110,31 @@ list scalars need `.as_py()`. `raster_to_dataframe` aggregates to one
 value per cell — useless for within-cell percentiles, hence the manual
 pixel binning.
 
+## 2026-07 — Soils / septic (Phase 3c)
+
+**SSURGO via per-survey-area zips + SDA tabular, not gSSURGO state
+FGDBs.** Web Soil Survey's download cache has a scriptable URL pattern
+`wss_SSA_{area}_[{saverest}]​.zip` (brackets URL-encoded; saverest date
+from SDA's `sacatalog`). Polygons from `soilmu_a_*.shp` inside each
+zip; septic rating ("ENG - Septic Tank Absorption Fields", dominant
+component by comppct_r) + drainage class via one SDA query per area.
+491,255 polygons for the AOI in ~3 min.
+
+**Survey areas mostly map to counties as {state}{fips3}, with four
+exceptions in our AOI** (multi-county surveys): James City→VA695,
+King George→VA179, Hampshire→WV608, Hardy→WV628. See AREA_OVERRIDES.
+
+**`overlaps` is a reserved word in Postgres** — can't be a CTE name.
+
+**Septic is the great discriminator in the mountains.** Funnel over
+candidates (5-50 ac): 183K sized → 149K dry → 117K flat → **43.5K
+septic-workable (pct_septic_ok ≥ 50)**. Hardy County drops from
+thousands of flat/dry parcels to **44 finalists**; Hampshire 14;
+Morgan 12. Ridge-and-valley soils are overwhelmingly rated 'Very
+limited' (95% of Hardy by area). Note: 'Very limited' ≠ unbuildable —
+alternative/engineered systems exist — so scoring should penalize,
+not exclude.
+
 ## 2026-07 — Post-reload staleness
 
 **A parcel reload does not cascade.** `candidate_parcels` is a
