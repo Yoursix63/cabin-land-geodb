@@ -149,6 +149,24 @@ cost), not a screen.
 5 candidates each). Fine as a one-time pass; if it becomes routine,
 precompute in a projected CRS or band with ST_DWithin first.
 
+## 2026-07 — Scoring (Phase 4)
+
+**Weighted-sum view, weights in a table.** `parcel_scores` computes six
+0-100 component scores (flood, slope, septic, size, drive, seclusion)
+and a weighted total; `scoring_weights` holds the weights (defaults:
+septic 25, slope 20, flood 15, drive 15, size 15, seclusion 10).
+Tuning = UPDATE + requery. Component curves (piecewise linear) live in
+the view SQL — changing a curve is a migration, changing a weight is
+not. NULL components count as neutral 50 in the total but stay NULL in
+their column so data gaps remain visible.
+
+**Default weights favor close-in suburbia** — top-15 is all Loudoun/
+Stafford/Fauquier, which are flat, dry, septic-fine, 60-75 min out,
+and unaffordable. The missing axes are price (Phase 5 listings) and
+cabin character (forest cover, terrain relief context). Until those
+land, use `manage.py shortlist --state/--county/--max-drive` to cut
+by region.
+
 ## 2026-07 — Post-reload staleness
 
 **A parcel reload does not cascade.** `candidate_parcels` is a

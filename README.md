@@ -100,9 +100,10 @@ python manage.py status           # row counts + freshness
       99.9% of candidates rated; 5-50ac flat+dry+septic funnel → 43.5K
 - [x] Phase 3c-roads: TIGER roads + nearest-road distance (92% of
       candidates within 100 m — scoring axis, not a screen)
-- [ ] Phase 3c: hydro (NHD streams), landcover (NLCD forest)
-- [ ] Phase 4: weighted scoring (flat+dry 5-50 ac screen alone leaves
-      ~117K parcels — needs more discriminators)
+- [ ] Phase 3c: hydro (NHD streams), landcover (NLCD forest) — score
+      refinements, deferred until after listings
+- [x] Phase 4: weighted scoring — `parcel_scores` view + `scoring_weights`
+      table + `manage.py shortlist` CLI
 - [ ] Phase 4: parcel scoring
 - [ ] Phase 5: FSBO / public listings overlay
 

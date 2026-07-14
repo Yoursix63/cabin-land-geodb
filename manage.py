@@ -232,6 +232,62 @@ def metrics_roads() -> None:
 
 
 # ---------------------------------------------------------------------------
+# shortlist
+# ---------------------------------------------------------------------------
+@cli.command()
+@click.option("--limit", default=20, show_default=True)
+@click.option("--county", default=None, help="Filter by county name substring.")
+@click.option("--state", default=None, type=click.Choice(["VA", "WV"]))
+@click.option("--min-acres", default=None, type=float)
+@click.option("--max-acres", default=None, type=float)
+@click.option("--max-drive", default=None, type=float, help="Minutes.")
+def shortlist(limit, county, state, min_acres, max_acres, max_drive) -> None:
+    """Top-scored candidate parcels."""
+    from sqlalchemy import text as _text
+
+    from ingest.db import get_engine
+    conds, params = [], {"limit": limit}
+    if county:
+        conds.append("county_name ILIKE :county")
+        params["county"] = f"%{county}%"
+    if state:
+        conds.append("state_abbr = :state")
+        params["state"] = state
+    if min_acres is not None:
+        conds.append("acres >= :min_acres")
+        params["min_acres"] = min_acres
+    if max_acres is not None:
+        conds.append("acres <= :max_acres")
+        params["max_acres"] = max_acres
+    if max_drive is not None:
+        conds.append("drive_minutes <= :max_drive")
+        params["max_drive"] = max_drive
+    where = ("WHERE " + " AND ".join(conds)) if conds else ""
+    sql = f"""
+        SELECT score, state_abbr, county_name, parcel_local_id,
+               acres::int AS ac, drive_minutes::int AS drv,
+               slope_mean, pct_septic_ok, sfha_pct, road_dist_m
+        FROM parcel_scores {where}
+        ORDER BY score DESC LIMIT :limit
+    """
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(_text(sql), params).all()
+    if not rows:
+        click.echo("No parcels match.")
+        return
+    hdr = (f"{'score':>5} {'st':2} {'county':<18} {'parcel id':<22} "
+           f"{'ac':>5} {'drv':>4} {'slope':>5} {'sep%':>5} {'sfha':>5} {'road':>6}")
+    click.echo(hdr)
+    click.echo("-" * len(hdr))
+    for r in rows:
+        click.echo(f"{r.score:>5} {r.state_abbr:2} {r.county_name[:18]:<18} "
+                   f"{r.parcel_local_id[:22]:<22} {r.ac:>5} {r.drv:>4} "
+                   f"{r.slope_mean or '-':>5} {r.pct_septic_ok or '-':>5} "
+                   f"{r.sfha_pct or 0:>5} {r.road_dist_m or '-':>6}")
+
+
+# ---------------------------------------------------------------------------
 # load
 # ---------------------------------------------------------------------------
 @cli.group()
