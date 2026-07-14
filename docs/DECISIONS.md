@@ -167,6 +167,24 @@ cabin character (forest cover, terrain relief context). Until those
 land, use `manage.py shortlist --state/--county/--max-drive` to cut
 by region.
 
+## 2026-07 — Listings (Phase 5)
+
+**First source: WV delinquent lands, not MLS.** The WV GIS Tech Center
+publishes a statewide Delinquent Properties service keyed by GISPID —
+the same id as our parcels, so the join is exact (99% match). 1,128
+listings across the 5 WV counties. Status semantics: 'No Bid' = unsold
+at tax auction, often purchasable directly from the WV State Auditor
+(the standing inventory); 'Deed' = tax deed in process; 'Redeemed' =
+owner paid, gone. `manage.py shortlist --for-sale` joins the scored
+parcels to active-ish listings (No Bid/Deed/Suspended).
+
+**listings is multi-source by design** — UNIQUE(source,
+source_listing_id), listing_kind enum-ish, optional parcel_id +
+point geom for sources that don't share parcel keys (geocoded FSBO,
+RSS feeds). Candidate next sources: VA county tax sales (scattered,
+per-county auctioneer sites), state surplus property, FSBO feeds.
+Commercial MLS/Zillow/LandWatch scraping stays out of scope (TOS).
+
 ## 2026-07 — Post-reload staleness
 
 **A parcel reload does not cascade.** `candidate_parcels` is a

@@ -241,34 +241,49 @@ def metrics_roads() -> None:
 @click.option("--min-acres", default=None, type=float)
 @click.option("--max-acres", default=None, type=float)
 @click.option("--max-drive", default=None, type=float, help="Minutes.")
-def shortlist(limit, county, state, min_acres, max_acres, max_drive) -> None:
+@click.option("--for-sale", is_flag=True,
+              help="Only parcels with an active listing "
+                   "(tax-sale statuses No Bid/Deed/Suspended count).")
+def shortlist(limit, county, state, min_acres, max_acres, max_drive,
+              for_sale) -> None:
     """Top-scored candidate parcels."""
     from sqlalchemy import text as _text
 
     from ingest.db import get_engine
     conds, params = [], {"limit": limit}
     if county:
-        conds.append("county_name ILIKE :county")
+        conds.append("ps.county_name ILIKE :county")
         params["county"] = f"%{county}%"
     if state:
-        conds.append("state_abbr = :state")
+        conds.append("ps.state_abbr = :state")
         params["state"] = state
     if min_acres is not None:
-        conds.append("acres >= :min_acres")
+        conds.append("ps.acres >= :min_acres")
         params["min_acres"] = min_acres
     if max_acres is not None:
-        conds.append("acres <= :max_acres")
+        conds.append("ps.acres <= :max_acres")
         params["max_acres"] = max_acres
     if max_drive is not None:
-        conds.append("drive_minutes <= :max_drive")
+        conds.append("ps.drive_minutes <= :max_drive")
         params["max_drive"] = max_drive
     where = ("WHERE " + " AND ".join(conds)) if conds else ""
+    listing_join, listing_cols = "", "NULL AS listing"
+    if for_sale:
+        listing_join = """
+            JOIN listings l ON l.parcel_id = ps.id
+             AND (l.listing_kind <> 'tax_sale'
+                  OR l.status IN ('No Bid', 'Deed', 'Suspended'))
+        """
+        listing_cols = "l.listing_kind || '/' || COALESCE(l.status,'?') AS listing"
     sql = f"""
-        SELECT score, state_abbr, county_name, parcel_local_id,
-               acres::int AS ac, drive_minutes::int AS drv,
-               slope_mean, pct_septic_ok, sfha_pct, road_dist_m
-        FROM parcel_scores {where}
-        ORDER BY score DESC LIMIT :limit
+        SELECT ps.score, ps.state_abbr, ps.county_name, ps.parcel_local_id,
+               ps.acres::int AS ac, ps.drive_minutes::int AS drv,
+               ps.slope_mean, ps.pct_septic_ok, ps.sfha_pct, ps.road_dist_m,
+               {listing_cols}
+        FROM parcel_scores ps
+        {listing_join}
+        {where}
+        ORDER BY ps.score DESC LIMIT :limit
     """
     engine = get_engine()
     with engine.connect() as conn:
@@ -277,14 +292,18 @@ def shortlist(limit, county, state, min_acres, max_acres, max_drive) -> None:
         click.echo("No parcels match.")
         return
     hdr = (f"{'score':>5} {'st':2} {'county':<18} {'parcel id':<22} "
-           f"{'ac':>5} {'drv':>4} {'slope':>5} {'sep%':>5} {'sfha':>5} {'road':>6}")
+           f"{'ac':>5} {'drv':>4} {'slope':>5} {'sep%':>5} {'sfha':>5} "
+           f"{'road':>6}" + ("  listing" if for_sale else ""))
     click.echo(hdr)
     click.echo("-" * len(hdr))
     for r in rows:
-        click.echo(f"{r.score:>5} {r.state_abbr:2} {r.county_name[:18]:<18} "
-                   f"{r.parcel_local_id[:22]:<22} {r.ac:>5} {r.drv:>4} "
-                   f"{r.slope_mean or '-':>5} {r.pct_septic_ok or '-':>5} "
-                   f"{r.sfha_pct or 0:>5} {r.road_dist_m or '-':>6}")
+        line = (f"{r.score:>5} {r.state_abbr:2} {r.county_name[:18]:<18} "
+                f"{r.parcel_local_id[:22]:<22} {r.ac:>5} {r.drv:>4} "
+                f"{r.slope_mean or '-':>5} {r.pct_septic_ok or '-':>5} "
+                f"{r.sfha_pct or 0:>5} {r.road_dist_m or '-':>6}")
+        if for_sale:
+            line += f"  {r.listing}"
+        click.echo(line)
 
 
 # ---------------------------------------------------------------------------
