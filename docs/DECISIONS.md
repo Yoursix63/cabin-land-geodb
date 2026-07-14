@@ -135,6 +135,20 @@ limited' (95% of Hardy by area). Note: 'Very limited' ≠ unbuildable —
 alternative/engineered systems exist — so scoring should penalize,
 not exclude.
 
+## 2026-07 — Roads (Phase 3c)
+
+**TIGER roads are barely a filter, mostly a signal.** 214K segments
+(S1100/S1200/S1400 public + S1500/S1740 kept for context) from
+per-county TIGER2024 zips. 92% of candidates sit within 100 m of a
+mapped public road, so "has access" cuts the funnel only 43.5K→41.9K.
+The discriminating tail is the ~2.2K parcels >500 m out — treat
+distance-to-road as a Phase 4 scoring axis (seclusion vs. access
+cost), not a screen.
+
+**KNN metrics cost 2 hours** (385K lateral KNN + geography recheck of
+5 candidates each). Fine as a one-time pass; if it becomes routine,
+precompute in a projected CRS or band with ST_DWithin first.
+
 ## 2026-07 — Post-reload staleness
 
 **A parcel reload does not cascade.** `candidate_parcels` is a

@@ -224,6 +224,13 @@ def metrics_septic() -> None:
     _run_metrics_sql(METRICS_SQL, "septic")
 
 
+@metrics.command("roads")
+def metrics_roads() -> None:
+    """Recompute nearest-public-road distance for candidates."""
+    from ingest.roads_tiger import METRICS_SQL
+    _run_metrics_sql(METRICS_SQL, "roads")
+
+
 # ---------------------------------------------------------------------------
 # load
 # ---------------------------------------------------------------------------

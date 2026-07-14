@@ -98,7 +98,9 @@ python manage.py status           # row counts + freshness
       slope tiles; 98.7% of candidates have slope_mean/p90/pct_steep
 - [x] Phase 3c-soils: SSURGO septic suitability — 491K soil polygons,
       99.9% of candidates rated; 5-50ac flat+dry+septic funnel → 43.5K
-- [ ] Phase 3c: hydro (NHD), landcover (NLCD), road access
+- [x] Phase 3c-roads: TIGER roads + nearest-road distance (92% of
+      candidates within 100 m — scoring axis, not a screen)
+- [ ] Phase 3c: hydro (NHD streams), landcover (NLCD forest)
 - [ ] Phase 4: weighted scoring (flat+dry 5-50 ac screen alone leaves
       ~117K parcels — needs more discriminators)
 - [ ] Phase 4: parcel scoring
