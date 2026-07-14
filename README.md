@@ -94,8 +94,11 @@ python manage.py status           # row counts + freshness
 - [ ] Phase 2.5: owner/address augmentation for shortlisted VA counties
 - [x] Phase 3a: FEMA flood zones (NFHL via Living Atlas) + per-parcel
       `sfha_pct` metrics — 82% of candidates fully outside SFHA
-- [ ] Phase 3b: slope/aspect from 3DEP DEM on H3 hex fabric
-- [ ] Phase 3c: soils (SSURGO), hydro (NHD), landcover (NLCD)
+- [x] Phase 3b: slope fabric — 3.5M H3 res-10 cells from 3DEP 10 m
+      slope tiles; 98.7% of candidates have slope_mean/p90/pct_steep
+- [ ] Phase 3c: soils (SSURGO), hydro (NHD), landcover (NLCD), road access
+- [ ] Phase 4: weighted scoring (flat+dry 5-50 ac screen alone leaves
+      ~117K parcels — needs more discriminators)
 - [ ] Phase 4: parcel scoring
 - [ ] Phase 5: FSBO / public listings overlay
 
