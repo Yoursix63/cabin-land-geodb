@@ -37,6 +37,8 @@ STAGING_COLS = {
     "lat":         "double precision",
 }
 
+# Border buildings can be reported under both adjacent counties' FIPS;
+# first county in wins (DO NOTHING on the build_id collision).
 MERGE_SQL_TEMPLATE = """
     DELETE FROM structures WHERE county_fips = '{fips}';
     INSERT INTO structures (build_id, county_fips, occ_cls, prim_occ,
@@ -44,7 +46,8 @@ MERGE_SQL_TEMPLATE = """
     SELECT DISTINCT ON (build_id)
         build_id, county_fips, occ_cls, prim_occ, sqfeet,
         ST_SetSRID(ST_MakePoint(lon, lat), 4326)
-    FROM _staging;
+    FROM _staging
+    ON CONFLICT (build_id) DO NOTHING;
 """
 
 METRICS_SQL = """

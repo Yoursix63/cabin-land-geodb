@@ -49,10 +49,19 @@ MERGE_SQL = """
     FROM _staging s
     WHERE NOT ST_IsEmpty(ST_CollectionExtract(ST_MakeValid(
         ST_SetSRID(ST_GeomFromGeoJSON(s.geom_json), 4326)), 3));
+
+    -- Rebuild the vertex-capped copy used by distance queries
+    -- (see sql/013_public_subdiv.sql).
+    TRUNCATE public_lands_subdiv;
+    INSERT INTO public_lands_subdiv (unit_nm, geom)
+    SELECT pl.unit_nm, ST_Subdivide(pl.geom, 128) FROM public_lands pl;
+    ANALYZE public_lands_subdiv;
 """
 
 # Distance to nearest public land within 5 km; NULL dist (with the
-# timestamp set) means "computed, nothing within 5 km".
+# timestamp set) means "computed, nothing within 5 km". Runs against
+# the ST_Subdivide'd copy — raw national-forest multipolygons made
+# this query crawl (O(vertices) per distance call).
 METRICS_SQL = """
     INSERT INTO parcel_metrics (parcel_id, public_land_dist_m,
                                 public_land_name, public_computed_at)
@@ -64,9 +73,9 @@ METRICS_SQL = """
                    AS dist_m
         FROM (
             SELECT pl.unit_nm, pl.geom
-            FROM public_lands pl
+            FROM public_lands_subdiv pl
             ORDER BY cp.geom <-> pl.geom
-            LIMIT 3
+            LIMIT 5
         ) k
         WHERE ST_DWithin(cp.geom::geography, k.geom::geography, 5000)
         ORDER BY ST_Distance(cp.geom::geography, k.geom::geography)
