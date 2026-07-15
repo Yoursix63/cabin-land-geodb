@@ -231,6 +231,20 @@ def metrics_roads() -> None:
     _run_metrics_sql(METRICS_SQL, "roads")
 
 
+@metrics.command("public")
+def metrics_public() -> None:
+    """Recompute distance-to-public-land for candidates."""
+    from ingest.public_lands import METRICS_SQL
+    _run_metrics_sql(METRICS_SQL, "public land")
+
+
+@metrics.command("structures")
+def metrics_structures() -> None:
+    """Recompute known-structure flags for candidates."""
+    from ingest.structures import METRICS_SQL
+    _run_metrics_sql(METRICS_SQL, "structures")
+
+
 # ---------------------------------------------------------------------------
 # shortlist
 # ---------------------------------------------------------------------------

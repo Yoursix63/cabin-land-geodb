@@ -25,14 +25,16 @@ _county_cache: dict | None = None
 
 
 FILTER_SQL = {
-    "min_score":  "ps.score >= :min_score",
-    "min_acres":  "ps.acres >= :min_acres",
-    "max_acres":  "ps.acres <= :max_acres",
-    "max_drive":  "ps.drive_minutes <= :max_drive",
-    "max_slope":  "ps.slope_mean <= :max_slope",
-    "min_septic": "ps.pct_septic_ok >= :min_septic",
-    "state":      "ps.state_abbr = :state",
-    "county":     "ps.county_name ILIKE :county",
+    "min_score":   "ps.score >= :min_score",
+    "min_acres":   "ps.acres >= :min_acres",
+    "max_acres":   "ps.acres <= :max_acres",
+    "max_drive":   "ps.drive_minutes <= :max_drive",
+    "max_slope":   "ps.slope_mean <= :max_slope",
+    "min_septic":  "ps.pct_septic_ok >= :min_septic",
+    "state":       "ps.state_abbr = :state",
+    "county":      "ps.county_name ILIKE :county",
+    "county_fips": "ps.county_fips = :county_fips",
+    "address":     "ps.situs_address ILIKE :address",
 }
 
 LISTING_ACTIVE = ("l.listing_kind <> 'tax_sale' "
@@ -45,13 +47,19 @@ def parse_filters(args) -> tuple[list[str], dict]:
         val = args.get(key)
         if val not in (None, ""):
             conds.append(sql)
-            params[key] = f"%{val}%" if key == "county" else val
+            params[key] = f"%{val}%" if key in ("county", "address") else val
     if args.get("dry_only") in ("1", "true"):
         conds.append("ps.sfha_pct = 0")
     if args.get("for_sale") in ("1", "true"):
         conds.append(f"""EXISTS (
             SELECT 1 FROM listings l
             WHERE l.parcel_id = ps.id AND ({LISTING_ACTIVE}))""")
+    if args.get("structure") == "with":
+        conds.append("ps.has_structure IS TRUE")
+    elif args.get("structure") == "without":
+        conds.append("ps.has_structure IS NOT TRUE")
+    if args.get("borders_public") in ("1", "true"):
+        conds.append("ps.public_land_dist_m <= 100")
     return conds, params
 
 
@@ -121,7 +129,8 @@ def parcels():
         rows = conn.execute(text(f"""
             SELECT ps.id, ps.score, ps.acres, ps.county_name, ps.state_abbr,
                    ps.parcel_local_id, ps.slope_mean, ps.pct_septic_ok,
-                   ps.sfha_pct, ps.road_dist_m,
+                   ps.sfha_pct, ps.road_dist_m, ps.situs_address,
+                   ps.has_structure, ps.public_land_dist_m,
                    l.listing_kind || '/' || COALESCE(l.status, '?') AS listing,
                    ST_AsGeoJSON(ST_SimplifyPreserveTopology(cp.geom, 0.00005), 5) AS gj
             FROM parcel_scores ps
@@ -150,7 +159,8 @@ def shortlist():
     with engine.connect() as conn:
         rows = conn.execute(text(f"""
             SELECT ps.id, ps.score, ps.acres, ps.county_name, ps.state_abbr,
-                   ps.parcel_local_id, ps.drive_minutes,
+                   ps.parcel_local_id, ps.drive_minutes, ps.situs_address,
+                   ps.has_structure, ps.public_land_dist_m,
                    ST_X(ST_Centroid(cp.geom)) AS lon,
                    ST_Y(ST_Centroid(cp.geom)) AS lat
             FROM parcel_scores ps
@@ -188,13 +198,17 @@ def parcel_detail(pid: int):
     return jsonify(out)
 
 
+COMPONENTS = ("flood", "slope", "septic", "size", "drive", "seclusion", "public")
+
+
 @app.get("/api/weights")
 def get_weights():
     with engine.connect() as conn:
         rows = conn.execute(text(
-            "SELECT component, weight, rationale FROM scoring_weights "
-            "ORDER BY weight DESC")).mappings().all()
+            "SELECT component, weight, default_weight, rationale "
+            "FROM scoring_weights ORDER BY weight DESC")).mappings().all()
     return jsonify([{"component": r["component"], "weight": float(r["weight"]),
+                     "default_weight": float(r["default_weight"] or r["weight"]),
                      "rationale": r["rationale"]} for r in rows])
 
 
@@ -202,8 +216,7 @@ def get_weights():
 def set_weights():
     global _county_cache
     body = request.get_json(silent=True) or {}
-    updates = {k: float(v) for k, v in body.items()
-               if k in ("flood", "slope", "septic", "size", "drive", "seclusion")}
+    updates = {k: float(v) for k, v in body.items() if k in COMPONENTS}
     if not updates:
         return jsonify({"error": "no valid components"}), 400
     with engine.begin() as conn:
@@ -213,6 +226,17 @@ def set_weights():
                 "WHERE component = :c"), {"w": w, "c": comp})
     _county_cache = None   # scores changed; choropleth stats are stale
     return jsonify({"ok": True, "updated": updates})
+
+
+@app.post("/api/weights/reset")
+def reset_weights():
+    global _county_cache
+    with engine.begin() as conn:
+        conn.execute(text(
+            "UPDATE scoring_weights SET weight = default_weight "
+            "WHERE default_weight IS NOT NULL"))
+    _county_cache = None
+    return jsonify({"ok": True})
 
 
 if __name__ == "__main__":

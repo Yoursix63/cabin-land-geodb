@@ -108,7 +108,12 @@ python manage.py status           # row counts + freshness
 - [x] Phase 5 (v1): listings framework + WV delinquent-lands source —
       1,128 tax-sale listings, 99% joined to parcels;
       `manage.py shortlist --for-sale`
-- [ ] Phase 5 (v2): VA tax sales, state surplus, FSBO feeds
+- [x] Phase 5 (v1.5): CSV listings importer (`ingest/listings_csv.py`)
+      for VA auction lists / FSBO — VA has no statewide tax-sale data
+      (per-county, ephemeral, TOS-gray aggregators; see DECISIONS)
+- [x] Public-land adjacency (PAD-US fee) as 7th scoring component
+- [x] Known-structure flag (USA Structures) — display + filter
+- [ ] Phase 5 (v2): recurring VA auction-list capture for shortlist counties
 
 See [docs/DECISIONS.md](docs/DECISIONS.md) for design decisions and
 data-source findings.

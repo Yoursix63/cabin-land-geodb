@@ -185,6 +185,35 @@ RSS feeds). Candidate next sources: VA county tax sales (scattered,
 per-county auctioneer sites), state surplus property, FSBO feeds.
 Commercial MLS/Zillow/LandWatch scraping stays out of scope (TOS).
 
+## 2026-07 — Public land, structures, VA listings reality
+
+**Public-land adjacency: PAD-US 4.1 fee lands** via the USGS AGOL
+`Manager_Name_PADUS` FeatureServer, `FeatClass='Fee'`, per-county bbox,
+deduped on OBJECTID → 2,409 polygons AOI-wide (George Washington NF
+dominates). New `public` scoring component (weight 10): 100 when
+within 100 m, tapering to 30 at 5 km; dist NULL after compute means
+">5 km" (score 30), distinct from not-computed (neutral 50).
+
+**Structures: FEMA/ORNL USA Structures**, county-FIPS server-side
+filter + `returnCentroid` (no polygon payloads). Stored as centroid
+points; `has_structure` = any centroid inside parcel. This is
+imagery-derived "known structure", NOT a permit record — county permit
+systems aren't accessible. Displayed + filterable, deliberately not
+scored (a structure can be an asset or a teardown).
+
+**VA for-sale data does not exist statewide.** Tax sales run
+per-county (Va. Code 58.1-3965) through private auctioneers; lists
+appear ~3 weeks pre-auction on taxva.com (TACS) and
+forsaleatauction.biz (27+ localities). Scraping them is TOS-gray and
+the lists are ephemeral. Path chosen: `ingest/listings_csv.py` manual
+importer (same listings table, parcel-joined by county+parcel id) —
+transcribe auction lists for counties that matter when they drop.
+Also note VGIN parcels carry no owner/address, so VA listings often
+must be matched by parcel id from the auction notice itself.
+
+**Weights now carry `default_weight`** so the UI can reset after
+tuning experiments.
+
 ## 2026-07 — Post-reload staleness
 
 **A parcel reload does not cascade.** `candidate_parcels` is a

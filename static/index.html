@@ -89,11 +89,20 @@ a { color: var(--accent); }
       <div class="row"><label>max slope°</label><input type="number" id="f_max_slope" placeholder="deg"></div>
       <div class="row"><label>min septic%</label><input type="number" id="f_min_septic" placeholder="%"></div>
       <div class="row"><label>state</label>
-        <select id="f_state"><option value="">both</option><option>VA</option><option>WV</option></select>
-        <input type="text" id="f_county" placeholder="county…"></div>
+        <select id="f_state" onchange="fillCountySelect()">
+          <option value="">both</option><option>VA</option><option>WV</option></select>
+        <select id="f_county_fips"><option value="">all counties</option></select></div>
+      <div class="row"><label>address</label>
+        <input type="text" id="f_address" placeholder="contains… (WV only)"></div>
+      <div class="row"><label>structure</label>
+        <select id="f_structure">
+          <option value="">any</option>
+          <option value="with">with structure</option>
+          <option value="without">without structure</option></select></div>
       <div class="checks">
         <label><input type="checkbox" id="f_dry" checked> dry only</label>
         <label><input type="checkbox" id="f_sale"> for sale</label>
+        <label><input type="checkbox" id="f_public"> borders public land</label>
       </div>
       <button onclick="applyFilters()">apply</button>
       <button class="ghost" onclick="resetFilters()">reset</button>
@@ -113,6 +122,7 @@ a { color: var(--accent); }
   <div id="wrows"></div>
   <div style="display:flex; gap:8px; margin-top:12px">
     <button onclick="saveWeights()">apply &amp; re-rank</button>
+    <button class="ghost" onclick="resetWeights()">reset to defaults</button>
     <button class="ghost" onclick="document.getElementById('weights').style.display='none'">cancel</button>
   </div>
 </div></div>
@@ -154,10 +164,26 @@ function collectFilters() {
   if (v('f_max_slope')) filters.max_slope = v('f_max_slope');
   if (v('f_min_septic')) filters.min_septic = v('f_min_septic');
   if (v('f_state')) filters.state = v('f_state');
-  if (v('f_county')) filters.county = v('f_county');
+  if (v('f_county_fips')) filters.county_fips = v('f_county_fips');
+  if (v('f_address')) filters.address = v('f_address');
+  if (v('f_structure')) filters.structure = v('f_structure');
   if (document.getElementById('f_dry').checked) filters.dry_only = 1;
   if (document.getElementById('f_sale').checked) filters.for_sale = 1;
+  if (document.getElementById('f_public').checked) filters.borders_public = 1;
   return filters;
+}
+
+let countyOptions = [];   // {fips, name, state} from /api/counties
+function fillCountySelect() {
+  const st = document.getElementById('f_state').value;
+  const sel = document.getElementById('f_county_fips');
+  const cur = sel.value;
+  const opts = countyOptions
+    .filter(c => !st || c.state === st)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  sel.innerHTML = '<option value="">all counties</option>' +
+    opts.map(c => `<option value="${c.fips}">${c.name} (${c.state})</option>`).join('');
+  if (opts.some(c => c.fips === cur)) sel.value = cur;
 }
 const qs = o => new URLSearchParams(o).toString();
 
@@ -185,6 +211,11 @@ async function loadCounties() {
   document.getElementById('hdrstats').textContent =
     `${t.toLocaleString()} candidate parcels · ${fs.toLocaleString()} for sale · ` +
     `${gj.features.filter(f => f.properties.relevant).length} counties`;
+  countyOptions = gj.features
+    .filter(f => f.properties.relevant)
+    .map(f => ({ fips: f.properties.fips, name: f.properties.name,
+                 state: f.properties.state }));
+  fillCountySelect();
 }
 
 let fetchSeq = 0;
@@ -223,9 +254,10 @@ async function loadShortlist() {
   document.getElementById('list').innerHTML = rows.map(p => `
     <div class="item" onclick="flyTo(${p.lat},${p.lon},${p.id})">
       <div class="top"><span class="score" style="color:${scoreColor(p.score)}">${p.score}</span>
-        <span>${Math.round(p.acres)} ac</span></div>
+        <span>${p.has_structure ? '⌂ ' : ''}${p.public_land_dist_m != null && p.public_land_dist_m <= 100 ? '🌲 ' : ''}${Math.round(p.acres)} ac</span></div>
       <div class="meta">${p.county_name}, ${p.state_abbr} · ${Math.round(p.drive_minutes)} min ·
         ${p.parcel_local_id}</div>
+      ${p.situs_address ? `<div class="meta">${p.situs_address}</div>` : ''}
     </div>`).join('') || '<div class="item">no matches</div>';
 }
 
@@ -242,7 +274,8 @@ async function showDetail(id) {
   selLayer = L.geoJSON(p.geometry, { style: { color: '#fff', weight: 2.5, fill: false } }).addTo(map);
   const comp = [['septic', p.septic_score], ['slope', p.slope_score],
     ['flood', p.flood_score], ['drive', p.drive_score],
-    ['size', p.size_score], ['seclusion', p.seclusion_score]];
+    ['size', p.size_score], ['seclusion', p.seclusion_score],
+    ['public land', p.public_score]];
   const fmt = (v, d = 1) => v == null ? '—' : (+v).toFixed(d);
   const g = `https://www.google.com/maps/@?api=1&map_action=map&center=${p.lat},${p.lon}&zoom=16&basemap=satellite`;
   document.getElementById('detail').innerHTML = `
@@ -263,6 +296,14 @@ async function showDetail(id) {
       <tr><td>dominant septic class</td><td>${p.septic_dominant ?? '—'}</td></tr>
       <tr><td>flood (SFHA share)</td><td>${fmt(p.sfha_pct)}%</td></tr>
       <tr><td>nearest public road</td><td>${fmt(p.road_dist_m, 0)} m</td></tr>
+      <tr><td>public land</td><td>${p.public_land_dist_m != null
+        ? `${fmt(p.public_land_dist_m, 0)} m${p.public_land_name ? ' · ' + p.public_land_name : ''}`
+        : (p.public_score != null ? '&gt;5 km' : '—')}</td></tr>
+      <tr><td>known structure</td><td>${p.has_structure == null ? '—'
+        : p.has_structure
+          ? `yes · ${p.structure_count} bldg${p.structure_count > 1 ? 's' : ''}` +
+            (p.structure_sqft ? ` · ${Math.round(p.structure_sqft).toLocaleString()} sqft max` : '')
+          : 'no'}</td></tr>
       ${p.owner ? `<tr><td>owner</td><td>${p.owner}</td></tr>` : ''}
       ${p.address ? `<tr><td>address</td><td>${p.address}</td></tr>` : ''}
     </table>
@@ -291,19 +332,26 @@ map.on('moveend', refreshLayers);
 function applyFilters() { collectFilters(); loadShortlist(); refreshLayers(); }
 function resetFilters() {
   for (const id of ['f_min_score','f_min_acres','f_max_acres','f_max_drive',
-                    'f_max_slope','f_min_septic','f_county'])
+                    'f_max_slope','f_min_septic','f_address'])
     document.getElementById(id).value = '';
   document.getElementById('f_state').value = '';
+  document.getElementById('f_county_fips').value = '';
+  document.getElementById('f_structure').value = '';
   document.getElementById('f_dry').checked = false;
   document.getElementById('f_sale').checked = false;
+  document.getElementById('f_public').checked = false;
+  fillCountySelect();
   applyFilters();
 }
 
+let weightComponents = [];
 async function openWeights() {
   const r = await fetch('/api/weights'); const ws = await r.json();
+  weightComponents = ws.map(w => w.component);
   document.getElementById('wrows').innerHTML = ws.map(w => `
     <div class="row"><label>${w.component}</label>
       <input type="range" min="0" max="40" step="1" value="${w.weight}" id="w_${w.component}"
+        data-default="${w.default_weight}"
         oninput="document.getElementById('wv_${w.component}').textContent=this.value">
       <span id="wv_${w.component}">${w.weight}</span></div>
     <small>${w.rationale ?? ''}</small>`).join('');
@@ -311,12 +359,17 @@ async function openWeights() {
 }
 async function saveWeights() {
   const body = {};
-  for (const c of ['flood','slope','septic','size','drive','seclusion']) {
+  for (const c of weightComponents) {
     const el = document.getElementById('w_' + c);
     if (el) body[c] = +el.value;
   }
   await fetch('/api/weights', { method: 'POST',
     headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  document.getElementById('weights').style.display = 'none';
+  await loadCounties(); applyFilters();
+}
+async function resetWeights() {
+  await fetch('/api/weights/reset', { method: 'POST' });
   document.getElementById('weights').style.display = 'none';
   await loadCounties(); applyFilters();
 }
