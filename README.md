@@ -113,7 +113,10 @@ python manage.py status           # row counts + freshness
       (per-county, ephemeral, TOS-gray aggregators; see DECISIONS)
 - [x] Public-land adjacency (PAD-US fee) as 7th scoring component
 - [x] Known-structure flag (USA Structures) — display + filter
+- [x] WV assessed values (WVGISTC tax product): appraised total/land/
+      building, year built, land use, deed refs; $/acre filterable
 - [ ] Phase 5 (v2): recurring VA auction-list capture for shortlist counties
+- [ ] VA assessed values: per-county augmentation for shortlist counties
 
 See [docs/DECISIONS.md](docs/DECISIONS.md) for design decisions and
 data-source findings.

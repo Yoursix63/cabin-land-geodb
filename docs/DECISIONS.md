@@ -214,6 +214,31 @@ must be matched by parcel id from the auction notice itself.
 **Weights now carry `default_weight`** so the UI can reset after
 tuning experiments.
 
+## 2026-07 — Assessment values (WV)
+
+**WVGISTC annual tax product, not the Blazor portal.** mapwv.gov's
+assessment viewer is Blazor Server (SignalR — not scrapeable), but the
+same data ships as per-county zips on the WV GIS Clearinghouse
+(`.../Parcels/WVGISTC_2025/CountySplits/`). ParcelSummary DBF carries
+appraised land/building/total, YearBuilt, LandUse, TaxClass, deed
+book/page + latest-transfer refs. Multi-card parcels aggregated
+(values summed). Join: ParcelSummary.CleanParce == the packed
+`clean_parcel_id` we stored in parcels.source_attrs at load. ~99.6%
+match.
+
+**No sale prices anywhere public in WV** — deed references only;
+consideration amounts live in courthouse records. Same for VA, where
+assessments themselves are also per-county (no statewide source);
+VA value data = future per-county augmentation for shortlist counties.
+
+**Value is context, not score** — `value_per_acre` and
+`appraised_total` are exposed in parcel_scores and filterable
+(max $/ac, max total), deliberately not a scoring component: cheap
+Hardy land is cheap *because* it is steep/septic-hostile, and the
+suitability components already capture that. The interesting query is
+high score + low $/ac — e.g. 32 ac active farm at $204/ac, 160 m from
+GW National Forest.
+
 ## 2026-07 — Post-reload staleness
 
 **A parcel reload does not cascade.** `candidate_parcels` is a

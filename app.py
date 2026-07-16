@@ -35,6 +35,8 @@ FILTER_SQL = {
     "county":      "ps.county_name ILIKE :county",
     "county_fips": "ps.county_fips = :county_fips",
     "address":     "ps.situs_address ILIKE :address",
+    "max_value":   "ps.appraised_total <= :max_value",
+    "max_ppa":     "ps.value_per_acre <= :max_ppa",
 }
 
 LISTING_ACTIVE = ("l.listing_kind <> 'tax_sale' "
@@ -131,6 +133,7 @@ def parcels():
                    ps.parcel_local_id, ps.slope_mean, ps.pct_septic_ok,
                    ps.sfha_pct, ps.road_dist_m, ps.situs_address,
                    ps.has_structure, ps.public_land_dist_m,
+                   ps.appraised_total, ps.value_per_acre,
                    l.listing_kind || '/' || COALESCE(l.status, '?') AS listing,
                    ST_AsGeoJSON(ST_SimplifyPreserveTopology(cp.geom, 0.00005), 5) AS gj
             FROM parcel_scores ps
@@ -161,6 +164,7 @@ def shortlist():
             SELECT ps.id, ps.score, ps.acres, ps.county_name, ps.state_abbr,
                    ps.parcel_local_id, ps.drive_minutes, ps.situs_address,
                    ps.has_structure, ps.public_land_dist_m,
+                   ps.appraised_total, ps.value_per_acre,
                    ST_X(ST_Centroid(cp.geom)) AS lon,
                    ST_Y(ST_Centroid(cp.geom)) AS lat
             FROM parcel_scores ps

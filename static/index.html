@@ -99,6 +99,9 @@ a { color: var(--accent); }
           <option value="">any</option>
           <option value="with">with structure</option>
           <option value="without">without structure</option></select></div>
+      <div class="row"><label>max value $</label>
+        <input type="number" id="f_max_value" placeholder="total">
+        <input type="number" id="f_max_ppa" placeholder="$/acre"></div>
       <div class="checks">
         <label><input type="checkbox" id="f_dry" checked> dry only</label>
         <label><input type="checkbox" id="f_sale"> for sale</label>
@@ -167,6 +170,8 @@ function collectFilters() {
   if (v('f_county_fips')) filters.county_fips = v('f_county_fips');
   if (v('f_address')) filters.address = v('f_address');
   if (v('f_structure')) filters.structure = v('f_structure');
+  if (v('f_max_value')) filters.max_value = v('f_max_value');
+  if (v('f_max_ppa')) filters.max_ppa = v('f_max_ppa');
   if (document.getElementById('f_dry').checked) filters.dry_only = 1;
   if (document.getElementById('f_sale').checked) filters.for_sale = 1;
   if (document.getElementById('f_public').checked) filters.borders_public = 1;
@@ -256,7 +261,7 @@ async function loadShortlist() {
       <div class="top"><span class="score" style="color:${scoreColor(p.score)}">${p.score}</span>
         <span>${p.has_structure ? '⌂ ' : ''}${p.public_land_dist_m != null && p.public_land_dist_m <= 100 ? '🌲 ' : ''}${Math.round(p.acres)} ac</span></div>
       <div class="meta">${p.county_name}, ${p.state_abbr} · ${Math.round(p.drive_minutes)} min ·
-        ${p.parcel_local_id}</div>
+        ${p.parcel_local_id}${p.value_per_acre ? ` · $${(+p.value_per_acre).toLocaleString()}/ac` : ''}</div>
       ${p.situs_address ? `<div class="meta">${p.situs_address}</div>` : ''}
     </div>`).join('') || '<div class="item">no matches</div>';
 }
@@ -304,6 +309,15 @@ async function showDetail(id) {
           ? `yes · ${p.structure_count} bldg${p.structure_count > 1 ? 's' : ''}` +
             (p.structure_sqft ? ` · ${Math.round(p.structure_sqft).toLocaleString()} sqft max` : '')
           : 'no'}</td></tr>
+      ${p.appraised_total != null ? `
+      <tr><td>appraised (${p.tax_year ?? '—'})</td>
+          <td>$${(+p.appraised_total).toLocaleString()}
+              ${p.value_per_acre ? ` · $${(+p.value_per_acre).toLocaleString()}/ac` : ''}</td></tr>
+      <tr><td>land / building</td>
+          <td>$${(+(p.appraised_land ?? 0)).toLocaleString()} /
+              $${(+(p.appraised_building ?? 0)).toLocaleString()}</td></tr>
+      ${p.year_built ? `<tr><td>year built</td><td>${p.year_built}</td></tr>` : ''}
+      ${p.land_use ? `<tr><td>land use</td><td>${p.land_use}</td></tr>` : ''}` : ''}
       ${p.owner ? `<tr><td>owner</td><td>${p.owner}</td></tr>` : ''}
       ${p.address ? `<tr><td>address</td><td>${p.address}</td></tr>` : ''}
     </table>
@@ -332,7 +346,8 @@ map.on('moveend', refreshLayers);
 function applyFilters() { collectFilters(); loadShortlist(); refreshLayers(); }
 function resetFilters() {
   for (const id of ['f_min_score','f_min_acres','f_max_acres','f_max_drive',
-                    'f_max_slope','f_min_septic','f_address'])
+                    'f_max_slope','f_min_septic','f_address',
+                    'f_max_value','f_max_ppa'])
     document.getElementById(id).value = '';
   document.getElementById('f_state').value = '';
   document.getElementById('f_county_fips').value = '';
