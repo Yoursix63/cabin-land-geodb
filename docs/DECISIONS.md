@@ -239,6 +239,37 @@ suitability components already capture that. The interesting query is
 high score + low $/ac — e.g. 32 ac active farm at $204/ac, 160 m from
 GW National Forest.
 
+## 2026-07 — Remoteness (neighbors + convenience)
+
+**Neighbor privacy measured directly from dwellings, not road
+distance.** nbr_dist_m = parcel boundary to nearest OFF-parcel
+dwelling (structures classed Residential + Unclassified, per user
+decision); nbr_cnt_500m/1km separate "one distant farmhouse" from
+"subdivision edge". Structures backfilled for 32 adjacent/border
+counties incl. MD across the Potomac (2.4M dwelling points total) so
+AOI-edge parcels don't look falsely private. The KNN + count pass
+took 4.7 h — the most expensive metric in the project; rerun only
+after structure reloads.
+
+**Scarcity finding:** only 4,967 of 385K candidates (1.3%) have no
+dwelling within 500 m; 915 meet ">=800 m and <=3 within 1 km". True
+seclusion is the rarest attribute in the corridor — rarer than flat,
+dry, or septic-workable.
+
+**Convenience: OSM POIs (Overpass w/ mirror fallback — the main
+instance 504s routinely) + Census places from TIGERweb Census2020
+(POP100; the ACS API now requires a key, TIGERweb doesn't).**
+Straight-line distances; in ridge-and-valley terrain road distance
+can be ~2x, fine for ranking, use OSRM one-offs for finalists.
+Validation: Hampshire avg 15 km grocery / 26 km town vs Stafford ~5 km
+both.
+
+**Scoring:** neighbors (15, distance curve minus density penalty),
+remoteness (10, remote-positive saturating at 30 km, 60/40
+grocery/town), seclusion demoted to 5 (access cost only). Grocery
+scoring direction (monotonic remote-positive vs sweet-band) chosen by
+user: monotonic.
+
 ## 2026-07 — Post-reload staleness
 
 **A parcel reload does not cascade.** `candidate_parcels` is a

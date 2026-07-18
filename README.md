@@ -115,8 +115,13 @@ python manage.py status           # row counts + freshness
 - [x] Known-structure flag (USA Structures) — display + filter
 - [x] WV assessed values (WVGISTC tax product): appraised total/land/
       building, year built, land use, deed refs; $/acre filterable
+- [x] Remoteness: nearest-dwelling distance + density (2.4M structure
+      points incl. border counties), grocery/town distances (OSM +
+      Census places); `neighbors` + `remoteness` scoring components
 - [ ] Phase 5 (v2): recurring VA auction-list capture for shortlist counties
 - [ ] VA assessed values: per-county augmentation for shortlist counties
+
+Map data (c) OpenStreetMap contributors (ODbL) for convenience POIs.
 
 See [docs/DECISIONS.md](docs/DECISIONS.md) for design decisions and
 data-source findings.

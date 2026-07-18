@@ -37,6 +37,9 @@ FILTER_SQL = {
     "address":     "ps.situs_address ILIKE :address",
     "max_value":   "ps.appraised_total <= :max_value",
     "max_ppa":     "ps.value_per_acre <= :max_ppa",
+    "min_nbr_dist": "ps.nbr_dist_m >= :min_nbr_dist",
+    "max_nbr_1km":  "ps.nbr_cnt_1km <= :max_nbr_1km",
+    "min_grocery":  "ps.grocery_dist_km >= :min_grocery",
 }
 
 LISTING_ACTIVE = ("l.listing_kind <> 'tax_sale' "
@@ -134,6 +137,7 @@ def parcels():
                    ps.sfha_pct, ps.road_dist_m, ps.situs_address,
                    ps.has_structure, ps.public_land_dist_m,
                    ps.appraised_total, ps.value_per_acre,
+                   ps.nbr_dist_m, ps.nbr_cnt_1km, ps.grocery_dist_km,
                    l.listing_kind || '/' || COALESCE(l.status, '?') AS listing,
                    ST_AsGeoJSON(ST_SimplifyPreserveTopology(cp.geom, 0.00005), 5) AS gj
             FROM parcel_scores ps
@@ -165,6 +169,7 @@ def shortlist():
                    ps.parcel_local_id, ps.drive_minutes, ps.situs_address,
                    ps.has_structure, ps.public_land_dist_m,
                    ps.appraised_total, ps.value_per_acre,
+                   ps.nbr_dist_m, ps.nbr_cnt_1km, ps.grocery_dist_km,
                    ST_X(ST_Centroid(cp.geom)) AS lon,
                    ST_Y(ST_Centroid(cp.geom)) AS lat
             FROM parcel_scores ps
@@ -202,7 +207,8 @@ def parcel_detail(pid: int):
     return jsonify(out)
 
 
-COMPONENTS = ("flood", "slope", "septic", "size", "drive", "seclusion", "public")
+COMPONENTS = ("flood", "slope", "septic", "size", "drive", "seclusion",
+              "public", "neighbors", "remoteness")
 
 
 @app.get("/api/weights")

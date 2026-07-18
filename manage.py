@@ -245,6 +245,20 @@ def metrics_structures() -> None:
     _run_metrics_sql(METRICS_SQL, "structures")
 
 
+@metrics.command("neighbors")
+def metrics_neighbors() -> None:
+    """Recompute nearest-dwelling distance + density (slow, ~hours)."""
+    from ingest.remoteness import NEIGHBORS_SQL
+    _run_metrics_sql(NEIGHBORS_SQL, "neighbors")
+
+
+@metrics.command("convenience")
+def metrics_convenience() -> None:
+    """Recompute grocery/town distances for candidates."""
+    from ingest.remoteness import CONVENIENCE_SQL
+    _run_metrics_sql(CONVENIENCE_SQL, "convenience")
+
+
 # ---------------------------------------------------------------------------
 # shortlist
 # ---------------------------------------------------------------------------

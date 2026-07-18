@@ -117,17 +117,21 @@ def load_county(fips: str, name: str) -> int:
 
 
 def main() -> None:
-    explicit = [a for a in sys.argv[1:] if a[:2] in ("51", "54")]
+    # Any 5-digit FIPS accepted — adjacent/border counties (incl. MD)
+    # are fetched for edge-correct neighbor metrics even though they
+    # aren't in counties_in_scope.
+    explicit = [a for a in sys.argv[1:] if a.isdigit() and len(a) == 5]
     engine = get_engine()
     with engine.connect() as conn:
-        where = "cabin_relevant"
-        params = {}
         if explicit:
-            where += " AND county_fips = ANY(:f)"
-            params["f"] = explicit
-        targets = conn.execute(text(
-            f"SELECT county_fips, name FROM counties_in_scope WHERE {where} "
-            f"ORDER BY county_fips"), params).all()
+            known = dict(conn.execute(text(
+                "SELECT county_fips, name FROM counties_in_scope "
+                "WHERE county_fips = ANY(:f)"), {"f": explicit}).all())
+            targets = [(f, known.get(f, f"FIPS {f}")) for f in explicit]
+        else:
+            targets = conn.execute(text(
+                "SELECT county_fips, name FROM counties_in_scope "
+                "WHERE cabin_relevant ORDER BY county_fips")).all()
 
     print(f"Fetching USA Structures for {len(targets)} counties")
     total = 0

@@ -102,6 +102,11 @@ a { color: var(--accent); }
       <div class="row"><label>max value $</label>
         <input type="number" id="f_max_value" placeholder="total">
         <input type="number" id="f_max_ppa" placeholder="$/acre"></div>
+      <div class="row"><label>seclusion</label>
+        <input type="number" id="f_min_nbr_dist" placeholder="min nbr m">
+        <input type="number" id="f_max_nbr_1km" placeholder="max ≤1km"></div>
+      <div class="row"><label>min grocery</label>
+        <input type="number" id="f_min_grocery" placeholder="km"></div>
       <div class="checks">
         <label><input type="checkbox" id="f_dry" checked> dry only</label>
         <label><input type="checkbox" id="f_sale"> for sale</label>
@@ -172,6 +177,9 @@ function collectFilters() {
   if (v('f_structure')) filters.structure = v('f_structure');
   if (v('f_max_value')) filters.max_value = v('f_max_value');
   if (v('f_max_ppa')) filters.max_ppa = v('f_max_ppa');
+  if (v('f_min_nbr_dist')) filters.min_nbr_dist = v('f_min_nbr_dist');
+  if (v('f_max_nbr_1km')) filters.max_nbr_1km = v('f_max_nbr_1km');
+  if (v('f_min_grocery')) filters.min_grocery = v('f_min_grocery');
   if (document.getElementById('f_dry').checked) filters.dry_only = 1;
   if (document.getElementById('f_sale').checked) filters.for_sale = 1;
   if (document.getElementById('f_public').checked) filters.borders_public = 1;
@@ -280,7 +288,8 @@ async function showDetail(id) {
   const comp = [['septic', p.septic_score], ['slope', p.slope_score],
     ['flood', p.flood_score], ['drive', p.drive_score],
     ['size', p.size_score], ['seclusion', p.seclusion_score],
-    ['public land', p.public_score]];
+    ['public land', p.public_score], ['neighbors', p.neighbors_score],
+    ['remoteness', p.remoteness_score]];
   const fmt = (v, d = 1) => v == null ? '—' : (+v).toFixed(d);
   const g = `https://www.google.com/maps/@?api=1&map_action=map&center=${p.lat},${p.lon}&zoom=16&basemap=satellite`;
   document.getElementById('detail').innerHTML = `
@@ -309,6 +318,15 @@ async function showDetail(id) {
           ? `yes · ${p.structure_count} bldg${p.structure_count > 1 ? 's' : ''}` +
             (p.structure_sqft ? ` · ${Math.round(p.structure_sqft).toLocaleString()} sqft max` : '')
           : 'no'}</td></tr>
+      <tr><td>nearest dwelling</td><td>${p.nbr_dist_m != null
+        ? `${fmt(p.nbr_dist_m, 0)} m · ${p.nbr_cnt_500m ?? 0} ≤500m · ${p.nbr_cnt_1km ?? 0} ≤1km`
+        : '—'}</td></tr>
+      <tr><td>nearest grocery</td><td>${p.grocery_dist_km != null
+        ? `${fmt(p.grocery_dist_km, 1)} km${p.grocery_name ? ' · ' + p.grocery_name : ''}`
+        : '—'}</td></tr>
+      <tr><td>nearest town (≥2.5k)</td><td>${p.town_dist_km != null
+        ? `${fmt(p.town_dist_km, 1)} km${p.town_name ? ' · ' + p.town_name : ''}`
+        : '—'}</td></tr>
       ${p.appraised_total != null ? `
       <tr><td>appraised (${p.tax_year ?? '—'})</td>
           <td>$${(+p.appraised_total).toLocaleString()}
@@ -347,7 +365,8 @@ function applyFilters() { collectFilters(); loadShortlist(); refreshLayers(); }
 function resetFilters() {
   for (const id of ['f_min_score','f_min_acres','f_max_acres','f_max_drive',
                     'f_max_slope','f_min_septic','f_address',
-                    'f_max_value','f_max_ppa'])
+                    'f_max_value','f_max_ppa','f_min_nbr_dist',
+                    'f_max_nbr_1km','f_min_grocery'])
     document.getElementById(id).value = '';
   document.getElementById('f_state').value = '';
   document.getElementById('f_county_fips').value = '';
