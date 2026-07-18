@@ -61,23 +61,33 @@ def aoi_bbox() -> tuple[float, float, float, float]:
     return s - PAD_DEG, w - PAD_DEG, n + PAD_DEG, e + PAD_DEG
 
 
+def _quadrants(s, w, n, e):
+    """2x2 split — the full-AOI query became too heavy for public
+    Overpass instances after the multi-state expansion."""
+    my, mx = (s + n) / 2, (w + e) / 2
+    return [(s, w, my, mx), (s, mx, my, e), (my, w, n, mx), (my, mx, n, e)]
+
+
 def main() -> None:
     s, w, n, e = aoi_bbox()
-    bbox = f"({s},{w},{n},{e})"
     rows: list[tuple] = []
     for kind, rule in KIND_RULES:
-        query = f"[out:json][timeout:300];({rule}{bbox};);out center tags;"
-        elements = None
-        for mirror in OVERPASS_MIRRORS:
-            try:
-                r = SESSION.post(mirror, data={"data": query}, timeout=600)
-                r.raise_for_status()
-                elements = r.json().get("elements", [])
-                break
-            except Exception as exc:
-                print(f"  {mirror.split('/')[2]}: {exc} — trying next mirror")
-        if elements is None:
-            raise RuntimeError(f"all Overpass mirrors failed for {kind}")
+        elements: list = []
+        for qs, qw, qn, qe in _quadrants(s, w, n, e):
+            bbox = f"({qs},{qw},{qn},{qe})"
+            query = f"[out:json][timeout:300];({rule}{bbox};);out center tags;"
+            got = None
+            for mirror in OVERPASS_MIRRORS:
+                try:
+                    r = SESSION.post(mirror, data={"data": query}, timeout=600)
+                    r.raise_for_status()
+                    got = r.json().get("elements", [])
+                    break
+                except Exception as exc:
+                    print(f"  {mirror.split('/')[2]}: {exc} — next mirror")
+            if got is None:
+                raise RuntimeError(f"all Overpass mirrors failed for {kind}")
+            elements.extend(got)
         for el in elements:
             if el["type"] == "node":
                 lon, lat = el.get("lon"), el.get("lat")
