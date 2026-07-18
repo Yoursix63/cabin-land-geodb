@@ -1,4 +1,33 @@
 county_fips,state_fips,state_abbr,name,drive_minutes,tiger_year
+10001,10,DE,Kent County,152.2,2024
+10003,10,DE,New Castle County,153.1,2024
+10005,10,DE,Sussex County,164.5,2024
+24003,24,MD,Anne Arundel County,56.2,2024
+24005,24,MD,Baltimore County,93.8,2024
+24510,24,MD,Baltimore city,74.2,2024
+24009,24,MD,Calvert County,75.7,2024
+24011,24,MD,Caroline County,116.9,2024
+24013,24,MD,Carroll County,113.2,2024
+24015,24,MD,Cecil County,131.5,2024
+24017,24,MD,Charles County,63.0,2024
+24019,24,MD,Dorchester County,170.3,2024
+24021,24,MD,Frederick County,85.7,2024
+24025,24,MD,Harford County,109.7,2024
+24027,24,MD,Howard County,73.9,2024
+24029,24,MD,Kent County,134.0,2024
+24031,24,MD,Montgomery County,49.7,2024
+24033,24,MD,Prince George's County,24.4,2024
+24035,24,MD,Queen Anne's County,100.8,2024
+24037,24,MD,St. Mary's County,97.2,2024
+24041,24,MD,Talbot County,124.0,2024
+24043,24,MD,Washington County,109.0,2024
+42001,42,PA,Adams County,133.2,2024
+42041,42,PA,Cumberland County,170.7,2024
+42045,42,PA,Delaware County,177.7,2024
+42055,42,PA,Franklin County,141.0,2024
+42057,42,PA,Fulton County,154.7,2024
+42071,42,PA,Lancaster County,177.4,2024
+42133,42,PA,York County,139.1,2024
 51003,51,VA,Albemarle County,161.2,2024
 51510,51,VA,Alexandria city,10.5,2024
 51007,51,VA,Amelia County,175.1,2024

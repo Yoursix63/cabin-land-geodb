@@ -20,7 +20,8 @@ from .staging import bulk_load
 BASE = ("https://tigerweb.geo.census.gov/arcgis/rest/services/Census2020/"
         "Places_CouSub_ConCity_SubMCD/MapServer")
 LAYERS = {4: "incorporated", 5: "cdp"}
-STATES = {"51": "VA", "54": "WV", "24": "MD"}
+STATES = {"51": "VA", "54": "WV", "24": "MD", "42": "PA", "10": "DE",
+          "34": "NJ"}   # NJ towns still matter as supply centers near DE
 PAGE_SIZE = 1000
 
 SESSION = make_session()

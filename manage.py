@@ -265,7 +265,8 @@ def metrics_convenience() -> None:
 @cli.command()
 @click.option("--limit", default=20, show_default=True)
 @click.option("--county", default=None, help="Filter by county name substring.")
-@click.option("--state", default=None, type=click.Choice(["VA", "WV"]))
+@click.option("--state", default=None,
+              type=click.Choice(["VA", "WV", "MD", "PA", "DE"]))
 @click.option("--min-acres", default=None, type=float)
 @click.option("--max-acres", default=None, type=float)
 @click.option("--max-drive", default=None, type=float, help="Minutes.")

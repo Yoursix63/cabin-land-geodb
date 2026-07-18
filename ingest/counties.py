@@ -32,7 +32,8 @@ ORIGIN_LON = float(os.getenv("ORIGIN_LON", "-77.0469"))
 DRIVE_TIME_MAX = int(os.getenv("DRIVE_TIME_MINUTES", "180"))
 OSRM_URL = os.getenv("ROUTING_URL") or "https://router.project-osrm.org"
 
-STATE_FIPS = {"51": "VA", "54": "WV"}
+STATE_FIPS = {"51": "VA", "54": "WV", "24": "MD", "42": "PA",
+              "10": "DE", "34": "NJ"}
 TIGER_YEAR = 2024
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,15 +47,18 @@ TIGERWEB_URL = (
 
 
 def fetch_counties() -> list[dict]:
-    params = {
-        "where": "STATE='51' OR STATE='54'",
-        "outFields": "GEOID,STATE,COUNTY,NAME,INTPTLAT,INTPTLON",
-        "outSR": "4326",
-        "f": "geojson",
-    }
-    r = requests.get(TIGERWEB_URL, params=params, timeout=60)
-    r.raise_for_status()
-    return r.json()["features"]
+    features: list[dict] = []
+    for state in STATE_FIPS:
+        params = {
+            "where": f"STATE='{state}'",
+            "outFields": "GEOID,STATE,COUNTY,NAME,INTPTLAT,INTPTLON",
+            "outSR": "4326",
+            "f": "geojson",
+        }
+        r = requests.get(TIGERWEB_URL, params=params, timeout=120)
+        r.raise_for_status()
+        features.extend(r.json()["features"])
+    return features
 
 
 def drive_minutes(lon: float, lat: float) -> float | None:

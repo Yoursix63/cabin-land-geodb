@@ -297,6 +297,32 @@ truth: 361,380). Loaders now purge rows not re-seen in a successful
 county load (DELETE ... ingested_at < run_start). If a county's
 candidate count ever jumps ~2x after a reload, suspect this first.
 
+## 2026-07 — Multi-state expansion (MD / PA / DE; NJ ruled out)
+
+**Scope revised by user (supersedes the original WV+VA-only call):**
+MD, PA, DE, NJ requested. The 180-min isochrone itself ruled NJ out —
+zero NJ counties within drive time (Salem, the closest, misses).
+Result: +19 MD, +7 PA, +3 DE jurisdictions; 88 total, 63
+cabin-relevant (urban exclusions: Baltimore city, Montgomery, Prince
+George's, Anne Arundel, Howard MD; Delaware Co PA).
+
+**Parcel sources:** MD iMap ParcelBoundaries is the best statewide
+layer in the project — geometry + address + SDAT values + YEARBLT +
+land use + TRADATE/CONSIDR1 (sale date/price) in one layer; owner
+NAMES are stripped from MD's public data (SDATWEBADR link per parcel
+instead). One load fills parcels AND parcel_assessments. DE FirstMap
+DE_StateParcels is geometry+acres only (VGIN-style; county
+augmentation later). **PA has no statewide parcels and several
+relevant counties sell their data** — per-county discovery like VA
+(Adams, Cumberland, Franklin, Fulton, Lancaster, York pending; treat
+partial PA coverage as expected).
+
+**Cascade checklist for new counties** (run after parcel loads):
+refresh-candidates → parcel_cells → soils (survey-area overrides TBD
+for MD/PA/DE) → roads → flood → PAD-US → slope (AOI grew — new tiles)
+→ structures (some MD already loaded as border counties) → POIs/places
+(PA/DE/NJ added) → metrics all → neighbors KNN last (longest).
+
 ## 2026-07 — Post-reload staleness
 
 **A parcel reload does not cascade.** `candidate_parcels` is a
