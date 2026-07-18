@@ -335,7 +335,9 @@ async function showDetail(id) {
           <td>$${(+(p.appraised_land ?? 0)).toLocaleString()} /
               $${(+(p.appraised_building ?? 0)).toLocaleString()}</td></tr>
       ${p.year_built ? `<tr><td>year built</td><td>${p.year_built}</td></tr>` : ''}
-      ${p.land_use ? `<tr><td>land use</td><td>${p.land_use}</td></tr>` : ''}` : ''}
+      ${p.land_use ? `<tr><td>land use</td><td>${p.land_use}</td></tr>` : ''}
+      ${p.sale_price ? `<tr><td>last sale</td>
+          <td>$${(+p.sale_price).toLocaleString()}${p.sale_date ? ' · ' + p.sale_date : ''}</td></tr>` : ''}` : ''}
       ${p.owner ? `<tr><td>owner</td><td>${p.owner}</td></tr>` : ''}
       ${p.address ? `<tr><td>address</td><td>${p.address}</td></tr>` : ''}
     </table>

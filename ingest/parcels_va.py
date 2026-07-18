@@ -169,11 +169,21 @@ def load_county(fips: str, name: str) -> int:
         return 0
     engine = get_engine()
     with engine.begin() as conn:
+        run_started, = conn.execute(text("SELECT now()")).one()
         conn.execute(UPSERT_SOURCE, {"fips": fips, "url": URL, "n": len(rows)})
         chunks = list(range(0, len(rows), CHUNK_SIZE))
         # disable=None -> progress bar only on a real terminal
         for i in tqdm(chunks, unit="chunk", desc="  upsert", disable=None):
             conn.execute(UPSERT_PARCEL, rows[i:i + CHUNK_SIZE])
+        # Purge rows the source no longer publishes — VGIN re-keys
+        # parcel ids on some county refreshes, and upsert alone would
+        # keep both vintages (learned the hard way with Spotsylvania).
+        stale = conn.execute(text(
+            "DELETE FROM parcels WHERE county_fips = :fips "
+            "AND ingested_at < :t0"), {"fips": fips, "t0": run_started})
+        if stale.rowcount:
+            print(f"  purged {stale.rowcount:,} stale rows "
+                  f"(superseded parcel ids)")
     return len(rows)
 
 

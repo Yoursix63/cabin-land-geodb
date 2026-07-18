@@ -270,6 +270,33 @@ grocery/town), seclusion demoted to 5 (access cost only). Grocery
 scoring direction (monotonic remote-positive vs sweet-band) chosen by
 user: monotonic.
 
+## 2026-07 — VA county augmentation + the stale-vintage bug
+
+**The statewide "VA parcels" vendor on AGOL (wharcgisdeveloper, ~130
+localities, uniform naming) is token-walled** — a commercial reseller.
+Real path: county-run open services, found one by one. Registry lives
+in `ingest/parcels_va_augment.py`; join is SPATIAL (county record
+centroid inside our VGIN polygon) so parcel-id format drift can't
+break it. Discovery recipe: AGOL search `"{county} virginia parcels
+type:Feature Service"`, then county-hosted `gis.*` guesses, then
+WebSearch; most counties hide behind commercial viewers
+(actDataScout etc.).
+
+**Configured so far:** Spotsylvania (self-hosted ArcGIS, full
+assessment + SALEPRICE/TRANSFERDATE; 68,284 parcels) and Page (AGOL,
+values + sale price/date + ArmsLength; 24,535). VA counties DO
+publish sale prices where WV doesn't. ~96% of those counties'
+candidates now carry owner/address; ~48% have a real transaction
+record.
+
+**VGIN re-keys parcel ids on some county refreshes** — the July
+refresh gave Spotsylvania an entirely new id set, and the upsert-only
+loader kept both vintages: 82,996 stale VA rows, ~24K phantom
+duplicate candidates (the "385K candidates" number was inflated;
+truth: 361,380). Loaders now purge rows not re-seen in a successful
+county load (DELETE ... ingested_at < run_start). If a county's
+candidate count ever jumps ~2x after a reload, suspect this first.
+
 ## 2026-07 — Post-reload staleness
 
 **A parcel reload does not cascade.** `candidate_parcels` is a
