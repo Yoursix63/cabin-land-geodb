@@ -15,11 +15,13 @@ be ranked. Free FSBO / public listings are overlaid on top where available.
 
 ## Scope
 
-- **States**: Virginia and West Virginia only
-- **Geographic filter**: counties intersecting a 3-hour drive isochrone from
-  Alexandria, VA
-- **Out of scope**: Maryland and Pennsylvania counties (even if within drive
-  time), commercial MLS scraping (TOS-restricted)
+- **States**: Virginia, West Virginia, Maryland, Delaware, and
+  Pennsylvania (PA parcels per-county, partial — several counties sell
+  their data). New Jersey was requested but has no county within the
+  drive-time envelope.
+- **Geographic filter**: counties within a 3-hour drive isochrone from
+  Alexandria, VA — 88 jurisdictions, 63 cabin-relevant
+- **Out of scope**: commercial MLS scraping (TOS-restricted)
 
 ## Stack
 

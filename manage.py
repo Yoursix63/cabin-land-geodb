@@ -131,9 +131,9 @@ CHECKS: list[tuple[str, str, str]] = [
     ("parcels with NULL acres",
      "SELECT COUNT(*) FROM parcels WHERE acres IS NULL", "0"),
     ("counties in scope",
-     "SELECT COUNT(*) FROM counties_in_scope", "59"),
+     "SELECT COUNT(*) FROM counties_in_scope", "88"),
     ("cabin-relevant counties",
-     "SELECT COUNT(*) FROM counties_in_scope WHERE cabin_relevant", "40"),
+     "SELECT COUNT(*) FROM counties_in_scope WHERE cabin_relevant", "63"),
 ]
 
 

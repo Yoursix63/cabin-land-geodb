@@ -37,8 +37,9 @@ STAGING_COLS = {
     "lat":         "double precision",
 }
 
-# Border buildings can be reported under both adjacent counties' FIPS;
-# first county in wins (DO NOTHING on the build_id collision).
+# BUILD_ID is unique per state dataset only — key on (county, build_id).
+# (A global build_id key silently dropped ~800K rows on cross-state
+# loads before migration 017.)
 MERGE_SQL_TEMPLATE = """
     DELETE FROM structures WHERE county_fips = '{fips}';
     INSERT INTO structures (build_id, county_fips, occ_cls, prim_occ,
@@ -47,7 +48,7 @@ MERGE_SQL_TEMPLATE = """
         build_id, county_fips, occ_cls, prim_occ, sqfeet,
         ST_SetSRID(ST_MakePoint(lon, lat), 4326)
     FROM _staging
-    ON CONFLICT (build_id) DO NOTHING;
+    ON CONFLICT (county_fips, build_id) DO NOTHING;
 """
 
 METRICS_SQL = """

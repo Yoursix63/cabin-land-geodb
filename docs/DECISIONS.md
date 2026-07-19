@@ -323,6 +323,20 @@ for MD/PA/DE) → roads → flood → PAD-US → slope (AOI grew — new tiles)
 → structures (some MD already loaded as border counties) → POIs/places
 (PA/DE/NJ added) → metrics all → neighbors KNN last (longest).
 
+## 2026-07 — USA Structures BUILD_ID is per-state, not national
+
+The global UNIQUE(build_id) + ON CONFLICT DO NOTHING silently dropped
+~940K structures across 42 counties on cross-state loads (Sussex DE
+kept 3% of its rows; even five WV/VA counties from the original loads
+were shorted — the WV "border building" diagnosis was wrong, this was
+the real cause). Symptom that exposed it: 65% of DE candidates showed
+as "secluded", vs 1.3% baseline. Migration 017 re-keys on
+(county_fips, build_id); all shorted counties reloaded (4.64M total);
+neighbors + has_structure recomputed (9.4 h). Corrected DE seclusion:
+343 parcels ≥500 m, not 28,652. Lesson: when a joined metric looks
+too good, audit the join keys — layer_loads.feature_count vs stored
+row count is the tripwire.
+
 ## 2026-07 — Post-reload staleness
 
 **A parcel reload does not cascade.** `candidate_parcels` is a

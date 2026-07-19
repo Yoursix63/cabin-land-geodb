@@ -83,14 +83,20 @@ METRICS_SQL = """
         sfha_zones        = EXCLUDED.sfha_zones,
         flood_computed_at = EXCLUDED.flood_computed_at;
 
-    -- Zero-fill candidates that touch no SFHA polygon.
+    -- Zero-fill candidates that touch no SFHA polygon. ON CONFLICT
+    -- required: another metric may have created the row already
+    -- (bit us when slope ran before a flood delta pass).
     INSERT INTO parcel_metrics (parcel_id, sfha_pct, sfha_zones, flood_computed_at)
     SELECT cp.id, 0, '{}', now()
     FROM candidate_parcels cp
     WHERE NOT EXISTS (
         SELECT 1 FROM parcel_metrics pm
         WHERE pm.parcel_id = cp.id AND pm.flood_computed_at IS NOT NULL
-    );
+    )
+    ON CONFLICT (parcel_id) DO UPDATE SET
+        sfha_pct          = EXCLUDED.sfha_pct,
+        sfha_zones        = EXCLUDED.sfha_zones,
+        flood_computed_at = EXCLUDED.flood_computed_at;
 """
 
 
